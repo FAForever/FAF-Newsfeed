@@ -4,34 +4,36 @@ on:
   push:
     branches:
       - main
+  schedule:
+    - cron: '0 * * * *' # Updates your data cache automatically every single hour
+  workflow_dispatch: # Keeps the manual "Run workflow" button active in your dashboard
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  contents: write
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps: deployment.outputs.page_url }}
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Source
+      - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Setup Pages Infrastructure
-        uses: actions/configure-pages@v4
-
-      - name: Upload Build Artifacts
-        uses: actions/upload-pages-artifact@v3
+      - name: Initialize Node.js Environment
+        uses: actions/setup-node@v4
         with:
-          path: '.' # Uploads everything in the repository root directly
+          node-version: 24
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Cache Transmission Stream
+        run: node build.js
+
+      - name: Move Assets to Distribution Space
+        run: |
+          cp index.html dist/index.html
+          cp style.css dist/style.css
+
+      - name: Deploy Compiled Distribution to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
