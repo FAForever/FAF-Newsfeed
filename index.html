@@ -74,7 +74,7 @@
 
   </div>
 
-  <script>
+<script>
     // ===== 1. SECTOR CLOCK ENGINE =====
     function updateClock(){
       const el = document.getElementById('clock');
@@ -95,17 +95,24 @@
         .trim();
     }
 
-    // ===== 3. LIVE WORDPRESS API INTEL EXCHANGE =====
+    // ===== 3. LIVE WORDPRESS API INTEL EXCHANGE (CORS BYPASS) =====
     async function fetchFafNewsFeed() {
       const feedContainer = document.getElementById('news-feed');
-      const WP_API_ENDPOINT = "https://www.faforever.com/wp-json/wp/v2/posts?_embed&per_page=6";
+      
+      // Target URL
+      const TARGET_API = "https://www.faforever.com/wp-json/wp/v2/posts?_embed&per_page=6";
+      
+      // We wrap the URL in a public open-source proxy to strip the security headers blocking your browser
+      const PROXIED_URL = `https://api.allorigins.win/raw?url=${encodeURIComponent(TARGET_API)}`;
 
       try {
-        const response = await fetch(WP_API_ENDPOINT);
+        const response = await fetch(PROXIED_URL);
         if (!response.ok) throw new Error("Security Intercept / Link Denied");
         
         const posts = await response.json();
         let cardsHtml = '';
+
+        if (!posts || posts.length === 0) throw new Error("Empty Payload");
 
         posts.forEach(post => {
           // Extract specific responsive thumbnail image metadata arrays
@@ -164,7 +171,7 @@
               <img src="${thumbnailUrl}" alt="${cleanTitle}" loading="lazy">
             </div>
             <span class="tag">${tagLabel}</span>
-            <div class="meta">${formattedDate} — RETRIEVAL COMPLETE</div>
+            <div class="meta">${formattedDate} — DATA VERIFIED</div>
             <h3>${cleanTitle}</h3>
             <p>${cleanExcerpt}</p>
             <a class="readmore" href="${post.link}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
