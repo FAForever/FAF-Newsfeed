@@ -74,7 +74,7 @@
 
   </div>
 
-<script>
+  <script>
     // ===== 1. SECTOR CLOCK ENGINE =====
     function updateClock(){
       var el = document.getElementById('clock');
@@ -101,11 +101,12 @@
       var feedContainer = document.getElementById('news-feed');
       if (!feedContainer) return;
 
-      var DIRECT_WP_API = "https://direct.faforever.com/wp-json/wp/v2/posts?_embed&per_page=6";
+      // Targets category 283 (Newshub) directly via the open proxy endpoint
+      var NEWSHUB_API = "https://direct.faforever.com/wp-json/wp/v2/posts/?per_page=6&_embed&_fields=_links.author,_links.wp:featuredmedia,_embedded,title,newshub_externalLinkUrl,newshub_sortIndex,content.rendered,date,categories&categories=283";
 
-      fetch(DIRECT_WP_API)
+      fetch(NEWSHUB_API)
         .then(function(response) {
-          if (!response.ok) throw new Error("Comms Link Interrupted");
+          if (!response.status === 200) throw new Error("Comms Link Interrupted");
           return response.json();
         })
         .then(function(posts) {
@@ -115,47 +116,41 @@
             throw new Error("No transmissions found.");
           }
 
-          posts.forEach(function(post) {
+          // Apply FAF's custom sorting rule logic safely
+          posts.sort(function(a, b) {
+            return (b.newshub_sortIndex || 0) - (a.newshub_sortIndex || 0);
+          });
+
+          // Filter out excluded items using FAF's second category check rule
+          var filteredPosts = posts.filter(function(post) {
+            return !post.categories || post.categories[1] !== 284;
+          });
+
+          filteredPosts.forEach(function(post) {
             var cleanTitle = decodeHtml(post.title.rendered);
 
-            // ─── CRITICAL CHANGE: EXTERNAL URL EXTRACTION ───
-            // Default destination is the WordPress link
-            var finalDestinationUrl = post.link; 
+            // Directly read the custom link array field mapped from FAF's code
+            var finalDestinationUrl = post.newshub_externalLinkUrl || post.link || '#';
 
-            // If the author put an external link inside the excerpt or content, we extract it!
-            var searchBody = (post.excerpt && post.excerpt.rendered) || (post.content && post.content.rendered) || '';
-            var hrefRegex = /href=["'](https?:\/\/(?:wiki|forum|github)\.faforever\.com[^"']+|https?:\/\/[^"']+)["']/i;
-            var linkMatch = searchBody.match(hrefRegex);
-            
-            if (linkMatch && linkMatch[1]) {
-              // Re-route the button destination to the extracted community link!
-              finalDestinationUrl = linkMatch[1];
-            }
-
-            // Pull thumbnail item safely
+            // Extract featured image URL accurately using FAF's layout rules
             var thumbnailUrl = 'https://picsum.photos/400/220'; 
-            var featuredMedia = post._embedded && post._embedded['wp:featuredmedia'] && post._embedded['wp:featuredmedia'][0];
-            if (featuredMedia) {
-              thumbnailUrl = (featuredMedia.media_details && featuredMedia.media_details.sizes && featuredMedia.media_details.sizes.medium_large && featuredMedia.media_details.sizes.medium_large.source_url)
-                             || featuredMedia.source_url 
-                             || thumbnailUrl;
+            if (post._embedded && post._embedded['wp:featuredmedia'] && post._embedded['wp:featuredmedia'][0]) {
+              thumbnailUrl = post._embedded['wp:featuredmedia'][0].source_url || thumbnailUrl;
             }
 
-            // Faction Code Matching
+            // Faction System Selector Matching Layout Parameters
             var factionClass = 'uef';
-            var tagLabel = 'FAF // BRIEFING';
+            var tagLabel = 'FAF // NEWS';
             
-            var categories = (post._embedded && post._embedded['wp:term'] && post._embedded['wp:term'][0]) || [];
-            var catNames = categories.map(function(c) { return c.name.toLowerCase(); });
-            var matchTarget = (post.slug + ' ' + post.title.rendered).toLowerCase();
+            var matchTarget = (cleanTitle + ' ' + (post.slug || '')).toLowerCase();
 
-            if (catNames.indexOf('cybran') !== -1 || matchTarget.indexOf('cybran') !== -1) {
+            if (matchTarget.indexOf('cybran') !== -1) {
               factionClass = 'cybran';
               tagLabel = 'CYBRAN // INTEL';
-            } else if (catNames.indexOf('aeon') !== -1 || matchTarget.indexOf('aeon') !== -1 || matchTarget.indexOf('tournament') !== -1) {
+            } else if (matchTarget.indexOf('aeon') !== -1 || matchTarget.indexOf('tournament') !== -1) {
               factionClass = 'aeon';
               tagLabel = 'AEON // PROTOCOL';
-            } else if (catNames.indexOf('seraphim') !== -1 || matchTarget.indexOf('seraphim') !== -1) {
+            } else if (matchTarget.indexOf('seraphim') !== -1) {
               factionClass = 'seraphim';
               tagLabel = 'SERAPHIM // SIGNAL';
             } else if (matchTarget.indexOf('patch') !== -1 || matchTarget.indexOf('balance') !== -1) {
@@ -163,13 +158,14 @@
               tagLabel = 'UEF // GRID';
             }
 
-            // Clean description strings safely
-            var cleanExcerpt = decodeHtml(rawExcerpt = (post.excerpt && post.excerpt.rendered) || '');
+            // Render safe context snippets cleanly
+            var rawContent = post.content ? post.content.rendered : '';
+            var cleanExcerpt = decodeHtml(rawContent);
             if (cleanExcerpt.length > 125) {
               cleanExcerpt = cleanExcerpt.substring(0, 120) + '...';
             }
 
-            // Build tactical timestamps (DD.MMM.YYYY)
+            // Create custom timestamps (DD.MMM.YYYY)
             var postDate = new Date(post.date);
             var day = String(postDate.getDate()).padStart(2, '0');
             var months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -184,7 +180,7 @@
                 <img src="${thumbnailUrl}" alt="${cleanTitle}" loading="lazy">
               </div>
               <span class="tag">${tagLabel}</span>
-              <div class="meta">${formattedDate} — SECURE TRANSMISSION</div>
+              <div class="meta">${formattedDate} — SECURE LINK</div>
               <h3>${cleanTitle}</h3>
               <p>${cleanExcerpt}</p>
               <a class="readmore" href="${finalDestinationUrl}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
@@ -197,7 +193,7 @@
           console.error("Transmission Failure:", err);
           feedContainer.innerHTML = `
             <div style="grid-column: 1/-1; color: var(--red); font-family: 'Share Tech Mono', monospace; text-align: center; padding: 40px 0; letter-spacing: 0.1em;">
-              LINK DROPPED — LOGISTICAL LINK ENCOUNTERED FIREWALL TERMINATION
+              LINK DROPPED — TERMINAL FIREWALL ACCESS INTERCEPTED
             </div>`;
         });
     }
