@@ -74,10 +74,11 @@
 
   </div>
 
-  <script>
+<script>
     // ===== 1. SECTOR CLOCK ENGINE =====
     function updateClock(){
-      const el = document.getElementById('clock');
+      var el = document.getElementById('clock');
+      if(!el) return;
       const now = new Date();
       const utc = now.toUTCString().split(' ')[4];
       el.textContent = 'SECTOR TIME — ' + utc + ' UTC';
@@ -87,7 +88,7 @@
 
     // ===== 2. WP HTML CHARACTER SANITIZATION HELPER =====
     function decodeHtml(html) {
-      const txt = document.createElement("textarea");
+      var txt = document.createElement("textarea");
       txt.innerHTML = html;
       return txt.value
         .replace(/<[^>]*>/g, '') // Strips out raw WordPress block tags
@@ -95,96 +96,100 @@
         .trim();
     }
 
-    // ===== 3. LIVE WORDPRESS API INTEL EXCHANGE (LOCAL ZERO-CORS CACHE) =====
-    async function fetchFafNewsFeed() {
-      const feedContainer = document.getElementById('news-feed');
+    // ===== 3. LIVE INTEL EXCHANGE (COMPATIBLE WITH CLIENT WEBVIEW) =====
+    function fetchFafNewsFeed() {
+      var feedContainer = document.getElementById('news-feed');
+      if (!feedContainer) return;
 
-      try {
-        // Reads from your compiled directory level, avoiding Cloudflare/WAF firewalls entirely
-        const response = await fetch('feed.json');
-        if (!response.ok) throw new Error("Local cache unavailable");
-        
-        const items = await response.json();
-        let cardsHtml = '';
+      // Force a cache-busting query parameter so the Java client doesn't freeze old news
+      var cacheBuster = '?t=' + new Date().getTime();
 
-        if (!items || items.length === 0) {
-          throw new Error("No transmissions found in database.");
-        }
+      fetch('feed.json' + cacheBuster)
+        .then(function(response) {
+          if (!response.ok) throw new Error("Local cache unavailable");
+          return response.json();
+        })
+        .then(function(items) {
+          var cardsHtml = '';
 
-        // Keep only the latest 6 items
-        items.slice(0, 6).forEach(item => {
-          const cleanTitle = decodeHtml(item.title);
-
-          // Extract thumbnail from cached RSS payload
-          let thumbnailUrl = 'https://picsum.photos/400/220'; 
-          if (item.thumbnail) {
-            thumbnailUrl = item.thumbnail;
-          } else if (item.content) {
-            const imgRegex = /<img[^>]+src=["']([^"']+)["']/i;
-            const imageMatch = item.content.match(imgRegex);
-            if (imageMatch && imageMatch[1]) thumbnailUrl = imageMatch[1];
+          if (!items || items.length === 0) {
+            throw new Error("No transmissions found.");
           }
 
-          // Deep matching system for FAF faction hooks
-          let factionClass = 'uef';
-          let tagLabel = 'FAF // TELEMETRY';
-          
-          const matchTarget = (item.guid + ' ' + item.title + ' ' + (item.description || '')).toLowerCase();
+          // Keep only the latest 6 items
+          items.slice(0, 6).forEach(function(item) {
+            var cleanTitle = decodeHtml(item.title);
 
-          if (matchTarget.includes('cybran')) {
-            factionClass = 'cybran';
-            tagLabel = 'CYBRAN // INTEL';
-          } else if (matchTarget.includes('aeon') || matchTarget.includes('tournament')) {
-            factionClass = 'aeon';
-            tagLabel = 'AEON // PROTOCOL';
-          } else if (matchTarget.includes('seraphim')) {
-            factionClass = 'seraphim';
-            tagLabel = 'SERAPHIM // SIGNAL';
-          } else if (matchTarget.includes('patch') || matchTarget.includes('balance')) {
-            factionClass = 'uef';
-            tagLabel = 'UEF // GRID';
-          }
+            // Extract thumbnail
+            var thumbnailUrl = 'https://picsum.photos/400/220'; 
+            if (item.thumbnail) {
+              thumbnailUrl = item.thumbnail;
+            } else if (item.content) {
+              var imgRegex = /<img[^>]+src=["']([^"']+)["']/i;
+              var imageMatch = item.content.match(imgRegex);
+              if (imageMatch && imageMatch[1]) thumbnailUrl = imageMatch[1];
+            }
 
-          // Clean description excerpt strings safely
-          let cleanExcerpt = decodeHtml(item.description || item.content || '');
-          if (cleanExcerpt.length > 125) {
-            cleanExcerpt = cleanExcerpt.substring(0, 120) + '...';
-          }
+            // Faction Matching System
+            var factionClass = 'uef';
+            var tagLabel = 'FAF // TELEMETRY';
+            var matchTarget = (item.guid + ' ' + item.title + ' ' + (item.description || '')).toLowerCase();
 
-          // Build tactical timestamps (DD.MMM.YYYY)
-          const postDate = new Date(item.pubDate.replace(/-/g, "/"));
-          const day = String(postDate.getDate()).padStart(2, '0');
-          const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-          const month = months[postDate.getMonth()];
-          const year = postDate.getFullYear();
-          const formattedDate = `${day}.${month}.${year}`;
+            if (matchTarget.includes('cybran')) {
+              factionClass = 'cybran';
+              tagLabel = 'CYBRAN // INTEL';
+            } else if (matchTarget.includes('aeon') || matchTarget.includes('tournament')) {
+              factionClass = 'aeon';
+              tagLabel = 'AEON // PROTOCOL';
+            } else if (matchTarget.includes('seraphim')) {
+              factionClass = 'seraphim';
+              tagLabel = 'SERAPHIM // SIGNAL';
+            } else if (matchTarget.includes('patch') || matchTarget.includes('balance')) {
+              factionClass = 'uef';
+              tagLabel = 'UEF // GRID';
+            }
 
-          cardsHtml += `
-          <article class="card ${factionClass}">
-            <div class="corner tl"></div><div class="corner br"></div>
-            <div class="card-thumb">
-              <img src="${thumbnailUrl}" alt="${cleanTitle}" loading="lazy">
-            </div>
-            <span class="tag">${tagLabel}</span>
-            <div class="meta">${formattedDate} — DATA VERIFIED</div>
-            <h3>${cleanTitle}</h3>
-            <p>${cleanExcerpt}</p>
-            <a class="readmore" href="${item.link}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
-          </article>`;
+            // Clean description excerpt strings safely
+            var cleanExcerpt = decodeHtml(item.description || item.content || '');
+            if (cleanExcerpt.length > 125) {
+              cleanExcerpt = cleanExcerpt.substring(0, 120) + '...';
+            }
+
+            // Build tactical timestamps (DD.MMM.YYYY)
+            var postDate = new Date(item.pubDate.replace(/-/g, "/"));
+            var day = String(postDate.getDate()).padStart(2, '0');
+            var months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            var month = months[postDate.getMonth()];
+            var year = postDate.getFullYear();
+            var formattedDate = day + '.' + month + '.' + year;
+
+            cardsHtml += `
+            <article class="card ${factionClass}">
+              <div class="corner tl"></div><div class="corner br"></div>
+              <div class="card-thumb">
+                <img src="${thumbnailUrl}" alt="${cleanTitle}" loading="lazy">
+              </div>
+              <span class="tag">${tagLabel}</span>
+              <div class="meta">${formattedDate} — DATA VERIFIED</div>
+              <h3>${cleanTitle}</h3>
+              <p>${cleanExcerpt}</p>
+              <a class="readmore" href="${item.link}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
+            </article>`;
+          });
+
+          feedContainer.innerHTML = cardsHtml;
+        })
+        .catch(function(err) {
+          console.error("Transmission Failure:", err);
+          feedContainer.innerHTML = `
+            <div style="grid-column: 1/-1; color: var(--red); font-family: 'Share Tech Mono', monospace; text-align: center; padding: 40px 0; letter-spacing: 0.1em;">
+              LINK DROPPED — LOGISTICAL DATA FEED CORRUPTED OR OFFLINE
+            </div>`;
         });
-
-        feedContainer.innerHTML = cardsHtml;
-
-      } catch (err) {
-        console.error("Transmission Failure:", err);
-        feedContainer.innerHTML = `
-          <div style="grid-column: 1/-1; color: var(--red); font-family: 'Share Tech Mono', monospace; text-align: center; padding: 40px 0; letter-spacing: 0.1em;">
-            LINK DROPPED — LOGISTICAL DATA FEED CORRUPTED OR OFFLINE
-          </div>`;
-      }
     }
 
-    window.addEventListener('DOMContentLoaded', fetchFafNewsFeed);
+    // Use a classic window load trigger ensuring compatibility with older client containers
+    window.onload = fetchFafNewsFeed;
   </script>
 
 </body>
