@@ -74,7 +74,7 @@
 
   </div>
 
-<script>
+  <script>
     // ===== 1. SECTOR CLOCK ENGINE =====
     function updateClock(){
       var el = document.getElementById('clock');
@@ -96,67 +96,69 @@
         .trim();
     }
 
-    // ===== 3. LIVE INTEL EXCHANGE (COMPATIBLE WITH CLIENT WEBVIEW) =====
+    // ===== 3. LIVE DIRECT WP_API TRANSMISSION INTERCHANGE =====
     function fetchFafNewsFeed() {
       var feedContainer = document.getElementById('news-feed');
       if (!feedContainer) return;
 
-      // Force a cache-busting query parameter so the Java client doesn't freeze old news
-      var cacheBuster = '?t=' + new Date().getTime();
+      // We bypass the core site firewall by querying direct.faforever.com directly
+      var DIRECT_WP_API = "https://direct.faforever.com/wp-json/wp/v2/posts?_embed&per_page=6";
 
-      fetch('feed.json' + cacheBuster)
+      fetch(DIRECT_WP_API)
         .then(function(response) {
-          if (!response.ok) throw new Error("Local cache unavailable");
+          if (!response.ok) throw new Error("Comms Link Interrupted");
           return response.json();
         })
-        .then(function(items) {
+        .then(function(posts) {
           var cardsHtml = '';
 
-          if (!items || items.length === 0) {
+          if (!posts || posts.length === 0) {
             throw new Error("No transmissions found.");
           }
 
-          // Keep only the latest 6 items
-          items.slice(0, 6).forEach(function(item) {
-            var cleanTitle = decodeHtml(item.title);
+          posts.forEach(function(post) {
+            var cleanTitle = decodeHtml(post.title.rendered);
 
-            // Extract thumbnail
+            // Pull thumbnail item safely matching WordPress's media payload structure
             var thumbnailUrl = 'https://picsum.photos/400/220'; 
-            if (item.thumbnail) {
-              thumbnailUrl = item.thumbnail;
-            } else if (item.content) {
-              var imgRegex = /<img[^>]+src=["']([^"']+)["']/i;
-              var imageMatch = item.content.match(imgRegex);
-              if (imageMatch && imageMatch[1]) thumbnailUrl = imageMatch[1];
+            var featuredMedia = post._embedded && post._embedded['wp:featuredmedia'] && post._embedded['wp:featuredmedia'][0];
+            if (featuredMedia) {
+              thumbnailUrl = (featuredMedia.media_details && featuredMedia.media_details.sizes && featuredMedia.media_details.sizes.medium_large && featuredMedia.media_details.sizes.medium_large.source_url)
+                             || featuredMedia.source_url 
+                             || thumbnailUrl;
             }
 
-            // Faction Matching System
+            // Tactical Faction Class Identifier matching logic
             var factionClass = 'uef';
-            var tagLabel = 'FAF // TELEMETRY';
-            var matchTarget = (item.guid + ' ' + item.title + ' ' + (item.description || '')).toLowerCase();
+            var tagLabel = 'FAF // BRIEFING';
+            
+            var categories = (post._embedded && post._embedded['wp:term'] && post._embedded['wp:term'][0]) || [];
+            var catNames = categories.map(function(c) { return c.name.toLowerCase(); });
+            var matchTarget = (post.slug + ' ' + post.title.rendered).toLowerCase();
 
-            if (matchTarget.includes('cybran')) {
+            if (catNames.indexOf('cybran') !== -1 || matchTarget.indexOf('cybran') !== -1) {
               factionClass = 'cybran';
               tagLabel = 'CYBRAN // INTEL';
-            } else if (matchTarget.includes('aeon') || matchTarget.includes('tournament')) {
+            } else if (catNames.indexOf('aeon') !== -1 || matchTarget.indexOf('aeon') !== -1 || matchTarget.indexOf('tournament') !== -1) {
               factionClass = 'aeon';
               tagLabel = 'AEON // PROTOCOL';
-            } else if (matchTarget.includes('seraphim')) {
+            } else if (catNames.indexOf('seraphim') !== -1 || matchTarget.indexOf('seraphim') !== -1) {
               factionClass = 'seraphim';
               tagLabel = 'SERAPHIM // SIGNAL';
-            } else if (matchTarget.includes('patch') || matchTarget.includes('balance')) {
+            } else if (matchTarget.indexOf('patch') !== -1 || matchTarget.indexOf('balance') !== -1) {
               factionClass = 'uef';
               tagLabel = 'UEF // GRID';
             }
 
-            // Clean description excerpt strings safely
-            var cleanExcerpt = decodeHtml(item.description || item.content || '');
+            // Clean description strings safely
+            var rawExcerpt = (post.excerpt && post.excerpt.rendered) || (post.content && post.content.rendered) || '';
+            var cleanExcerpt = decodeHtml(rawExcerpt);
             if (cleanExcerpt.length > 125) {
               cleanExcerpt = cleanExcerpt.substring(0, 120) + '...';
             }
 
             // Build tactical timestamps (DD.MMM.YYYY)
-            var postDate = new Date(item.pubDate.replace(/-/g, "/"));
+            var postDate = new Date(post.date);
             var day = String(postDate.getDate()).padStart(2, '0');
             var months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
             var month = months[postDate.getMonth()];
@@ -170,10 +172,10 @@
                 <img src="${thumbnailUrl}" alt="${cleanTitle}" loading="lazy">
               </div>
               <span class="tag">${tagLabel}</span>
-              <div class="meta">${formattedDate} — DATA VERIFIED</div>
+              <div class="meta">${formattedDate} — SECURE TRANSMISSION</div>
               <h3>${cleanTitle}</h3>
               <p>${cleanExcerpt}</p>
-              <a class="readmore" href="${item.link}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
+              <a class="readmore" href="${post.link}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
             </article>`;
           });
 
@@ -183,12 +185,12 @@
           console.error("Transmission Failure:", err);
           feedContainer.innerHTML = `
             <div style="grid-column: 1/-1; color: var(--red); font-family: 'Share Tech Mono', monospace; text-align: center; padding: 40px 0; letter-spacing: 0.1em;">
-              LINK DROPPED — LOGISTICAL DATA FEED CORRUPTED OR OFFLINE
+              LINK DROPPED — LOGISTICAL LINK ENCOUNTERED FIREWALL TERMINATION
             </div>`;
         });
     }
 
-    // Use a classic window load trigger ensuring compatibility with older client containers
+    // Run data fetch loop completely when window paints
     window.onload = fetchFafNewsFeed;
   </script>
 
