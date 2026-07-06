@@ -74,7 +74,7 @@
 
   </div>
 
-  <script>
+<script>
     // ===== 1. SECTOR CLOCK ENGINE =====
     function updateClock(){
       var el = document.getElementById('clock');
@@ -101,7 +101,6 @@
       var feedContainer = document.getElementById('news-feed');
       if (!feedContainer) return;
 
-      // We bypass the core site firewall by querying direct.faforever.com directly
       var DIRECT_WP_API = "https://direct.faforever.com/wp-json/wp/v2/posts?_embed&per_page=6";
 
       fetch(DIRECT_WP_API)
@@ -119,7 +118,21 @@
           posts.forEach(function(post) {
             var cleanTitle = decodeHtml(post.title.rendered);
 
-            // Pull thumbnail item safely matching WordPress's media payload structure
+            // ─── CRITICAL CHANGE: EXTERNAL URL EXTRACTION ───
+            // Default destination is the WordPress link
+            var finalDestinationUrl = post.link; 
+
+            // If the author put an external link inside the excerpt or content, we extract it!
+            var searchBody = (post.excerpt && post.excerpt.rendered) || (post.content && post.content.rendered) || '';
+            var hrefRegex = /href=["'](https?:\/\/(?:wiki|forum|github)\.faforever\.com[^"']+|https?:\/\/[^"']+)["']/i;
+            var linkMatch = searchBody.match(hrefRegex);
+            
+            if (linkMatch && linkMatch[1]) {
+              // Re-route the button destination to the extracted community link!
+              finalDestinationUrl = linkMatch[1];
+            }
+
+            // Pull thumbnail item safely
             var thumbnailUrl = 'https://picsum.photos/400/220'; 
             var featuredMedia = post._embedded && post._embedded['wp:featuredmedia'] && post._embedded['wp:featuredmedia'][0];
             if (featuredMedia) {
@@ -128,7 +141,7 @@
                              || thumbnailUrl;
             }
 
-            // Tactical Faction Class Identifier matching logic
+            // Faction Code Matching
             var factionClass = 'uef';
             var tagLabel = 'FAF // BRIEFING';
             
@@ -151,8 +164,7 @@
             }
 
             // Clean description strings safely
-            var rawExcerpt = (post.excerpt && post.excerpt.rendered) || (post.content && post.content.rendered) || '';
-            var cleanExcerpt = decodeHtml(rawExcerpt);
+            var cleanExcerpt = decodeHtml(rawExcerpt = (post.excerpt && post.excerpt.rendered) || '');
             if (cleanExcerpt.length > 125) {
               cleanExcerpt = cleanExcerpt.substring(0, 120) + '...';
             }
@@ -175,7 +187,7 @@
               <div class="meta">${formattedDate} — SECURE TRANSMISSION</div>
               <h3>${cleanTitle}</h3>
               <p>${cleanExcerpt}</p>
-              <a class="readmore" href="${post.link}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
+              <a class="readmore" href="${finalDestinationUrl}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
             </article>`;
           });
 
@@ -190,7 +202,6 @@
         });
     }
 
-    // Run data fetch loop completely when window paints
     window.onload = fetchFafNewsFeed;
   </script>
 
