@@ -39,7 +39,10 @@
 
     <div class="section-label">LATEST BRIEFINGS</div>
 
-    <div class="feed">
+    <div class="feed" id="news-feed">
+      <div style="grid-column: 1/-1; color: var(--phosphor-dim); font-family: 'Share Tech Mono', monospace; text-align: center; padding: 40px 0; letter-spacing: 0.1em;">
+        INITIALIZING COMMS LINK — FETCHING TRANSCRIPTIONS...
+      </div>
     </div>
 
     <div class="ticker-wrap">
@@ -72,6 +75,7 @@
   </div>
 
   <script>
+    // ===== 1. SECTOR CLOCK ENGINE =====
     function updateClock(){
       const el = document.getElementById('clock');
       const now = new Date();
@@ -80,6 +84,106 @@
     }
     updateClock();
     setInterval(updateClock, 1000);
+
+    // ===== 2. WP HTML CHARACTER SANITIZATION HELPER =====
+    function decodeHtml(html) {
+      const txt = document.createElement("textarea");
+      txt.innerHTML = html;
+      return txt.value
+        .replace(/<[^>]*>/g, '') // Strips out raw WordPress block tags
+        .replace(/\s+/g, ' ')   // Squashes weird line break layouts
+        .trim();
+    }
+
+    // ===== 3. LIVE WORDPRESS API INTEL EXCHANGE =====
+    async function fetchFafNewsFeed() {
+      const feedContainer = document.getElementById('news-feed');
+      const WP_API_ENDPOINT = "https://www.faforever.com/wp-json/wp/v2/posts?_embed&per_page=6";
+
+      try {
+        const response = await fetch(WP_API_ENDPOINT);
+        if (!response.ok) throw new Error("Security Intercept / Link Denied");
+        
+        const posts = await response.json();
+        let cardsHtml = '';
+
+        posts.forEach(post => {
+          // Extract specific responsive thumbnail image metadata arrays
+          let thumbnailUrl = 'https://picsum.photos/400/220'; // Clean placeholder
+          const featuredMedia = post._embedded?.['wp:featuredmedia']?.[0];
+          if (featuredMedia) {
+            thumbnailUrl = featuredMedia.media_details?.sizes?.medium_large?.source_url 
+                           || featuredMedia.source_url 
+                           || thumbnailUrl;
+          }
+
+          const cleanTitle = decodeHtml(post.title.rendered);
+
+          // Deep matching system for FAF faction hooks based on taxonomy terms & tags
+          let factionClass = 'uef';
+          let tagLabel = 'FAF // TELEMETRY';
+          
+          const categories = post._embedded?.['wp:term']?.[0] || [];
+          const catNames = categories.map(c => c.name.toLowerCase());
+          const matchTarget = (post.slug + ' ' + post.title.rendered).toLowerCase();
+
+          if (catNames.includes('cybran') || matchTarget.includes('cybran')) {
+            factionClass = 'cybran';
+            tagLabel = 'CYBRAN // INTEL';
+          } else if (catNames.includes('aeon') || matchTarget.includes('aeon') || matchTarget.includes('tournament')) {
+            factionClass = 'aeon';
+            tagLabel = 'AEON // PROTOCOL';
+          } else if (catNames.includes('seraphim') || matchTarget.includes('seraphim')) {
+            factionClass = 'seraphim';
+            tagLabel = 'SERAPHIM // SIGNAL';
+          } else if (matchTarget.includes('patch') || matchTarget.includes('balance')) {
+            factionClass = 'uef';
+            tagLabel = 'UEF // GRID';
+          }
+
+          // Truncate description payload strings evenly to safe dimensions
+          let rawExcerpt = post.excerpt?.rendered || post.content?.rendered || '';
+          let cleanExcerpt = decodeHtml(rawExcerpt);
+          if (cleanExcerpt.length > 125) {
+            cleanExcerpt = cleanExcerpt.substring(0, 120) + '...';
+          }
+
+          // Build custom tactical timestamp strings (DD.MMM.YYYY)
+          const postDate = new Date(post.date);
+          const day = String(postDate.getDate()).padStart(2, '0');
+          const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+          const month = months[postDate.getMonth()];
+          const year = postDate.getFullYear();
+          const formattedDate = `${day}.${month}.${year}`;
+
+          // Assemble the clean, overflow-bulletproof markup block
+          cardsHtml += `
+          <article class="card ${factionClass}">
+            <div class="corner tl"></div><div class="corner br"></div>
+            <div class="card-thumb">
+              <img src="${thumbnailUrl}" alt="${cleanTitle}" loading="lazy">
+            </div>
+            <span class="tag">${tagLabel}</span>
+            <div class="meta">${formattedDate} — RETRIEVAL COMPLETE</div>
+            <h3>${cleanTitle}</h3>
+            <p>${cleanExcerpt}</p>
+            <a class="readmore" href="${post.link}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
+          </article>`;
+        });
+
+        feedContainer.innerHTML = cardsHtml;
+
+      } catch (err) {
+        console.error("Transmission Failure:", err);
+        feedContainer.innerHTML = `
+          <div style="grid-column: 1/-1; color: var(--red); font-family: 'Share Tech Mono', monospace; text-align: center; padding: 40px 0; letter-spacing: 0.1em;">
+            LINK DROPPED — SECURE ACCESS TERMINATED BY REMOTE FIREWALL
+          </div>`;
+      }
+    }
+
+    // Run data fetch loop immediately upon layout rendering
+    window.addEventListener('DOMContentLoaded', fetchFafNewsFeed);
   </script>
 
 </body>
