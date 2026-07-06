@@ -1,12 +1,13 @@
 const fs = require('fs');
 
-// Production endpoint with embedded media payloads
-const WP_API_URL = "https://www.faforever.com/wp-json/wp/v2/posts?_embed&per_page=6";
+// We use the RSS Feed which firewalls typically leave open to public aggregators
+const RSS_FEED_URL = "https://www.faforever.com/feed/";
 
-// Helper function to decode standard WordPress HTML entities safely without dependencies
+// Helper to escape or decode standard HTML entities safely
 function decodeHtmlEntities(str) {
   if (!str) return '';
   return str
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1') // Strip CDATA tags used in XML
     .replace(/&#8217;/g, "'")
     .replace(/&#8216;/g, "'")
     .replace(/&#8230;/g, "...")
@@ -17,88 +18,94 @@ function decodeHtmlEntities(str) {
     .replace(/&gt;/g, '>');
 }
 
+// Regex helper to extract content between custom XML tags safely
+function extractTagContent(itemString, tagName) {
+  const match = itemString.match(new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)<\/${tagName}>`));
+  return match ? match[1].trim() : '';
+}
+
 async function buildSite() {
   try {
-    console.log("Establishing connection to FAF WordPress API...");
+    console.log("Establishing connection to public FAF RSS stream...");
     
-// We pass browser headers so the FAF WordPress server doesn't block the GitHub Runner
-    const response = await fetch(WP_API_URL, {
+    const response = await fetch(RSS_FEED_URL, {
       method: 'GET',
       headers: { 
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+        'Accept': 'text/xml, application/rss+xml'
       }
     });
     
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const posts = await response.json();
+    const xmlText = await response.text();
 
+    // Split XML payload into standalone item array blocks (Limit to latest 6 items)
+    const items = xmlText.split('<item>').slice(1, 7);
     let cardsHtml = '';
 
-    posts.forEach(post => {
-      // 1. Production Image Extraction (Matches FAF's nested media payload structure)
-      let thumbnailUrl = 'https://picsum.photos/400/220'; // Fallback
-      const featuredMedia = post._embedded?.['wp:featuredmedia']?.[0];
+    if (items.length === 0) {
+      throw new Error("No data chunks found in the feed payload.");
+    }
+
+    items.forEach(item => {
+      const rawTitle = extractTagContent(item, 'title');
+      const cleanTitle = decodeHtmlEntities(rawTitle);
+      const postLink = extractTagContent(item, 'link');
       
-      if (featuredMedia) {
-        // Use medium_large or large sizes if available to save bandwidth, fallback to source
-        thumbnailUrl = featuredMedia.media_details?.sizes?.medium_large?.source_url 
-                       || featuredMedia.source_url 
-                       || thumbnailUrl;
-      }
-
-      // 2. Production Category & Faction Mapping
-      let factionClass = 'uef'; // Default fallback
-      let tagLabel = 'FAF // INTEL';
-      
-      const categories = post._embedded?.['wp:term']?.[0] || [];
-      const catNames = categories.map(c => c.name.toLowerCase());
-      const slugAndTitle = (post.slug + ' ' + post.title.rendered).toLowerCase();
-
-      // Check categories first, then check string signatures
-      if (catNames.includes('cybran') || slugAndTitle.includes('cybran')) {
-        factionClass = 'cybran';
-        tagLabel = 'CYBRAN // DISPATCH';
-      } else if (catNames.includes('aeon') || slugAndTitle.includes('aeon')) {
-        factionClass = 'aeon';
-        tagLabel = 'AEON // ILLUMINATE';
-      } else if (catNames.includes('seraphim') || slugAndTitle.includes('seraphim')) {
-        factionClass = 'seraphim';
-        tagLabel = 'SERAPHIM // XENO';
-      } else if (catNames.includes('tournament') || slugAndTitle.includes('tournament')) {
-        factionClass = 'aeon'; 
-        tagLabel = 'FAF // TOURNAMENT';
-      } else if (catNames.includes('patch') || slugAndTitle.includes('balance')) {
-        factionClass = 'uef';
-        tagLabel = 'UEF // BALANCE';
-      }
-
-      // 3. Title Processing & Entity Fixes
-      const cleanTitle = decodeHtmlEntities(post.title.rendered);
-
-      // 4. Clean & Trim Excerpt Text (Strips HTML tags & Gutenberg block wrappers)
-      let rawExcerpt = post.excerpt?.rendered || post.content?.rendered || '';
-      let cleanExcerpt = rawExcerpt
-        .replace(/<[^>]*>/g, '') // Strip HTML tags completely
-        .replace(/\s+/g, ' ')   // Normalize white spaces
-        .trim();
-      
-      // Escape or truncate safely to fit your card container limitations
-      if (cleanExcerpt.length > 130) {
-        cleanExcerpt = cleanExcerpt.substring(0, 125) + '...';
-      }
-      cleanExcerpt = decodeHtmlEntities(cleanExcerpt);
-
-      // 5. Military Tactical Date Formatting (DD.MMM.YYYY)
-      const postDate = new Date(post.date);
+      // Parse dates out from RSS standardized RFC822 format (e.g. "Tue, 30 Jun 2026 12:00:00 +0000")
+      const pubDateText = extractTagContent(item, 'pubDate');
+      const postDate = pubDateText ? new Date(pubDateText) : new Date();
       const day = String(postDate.getDate()).padStart(2, '0');
       const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
       const month = months[postDate.getMonth()];
       const year = postDate.getFullYear();
       const formattedDate = `${day}.${month}.${year}`;
 
-      // Assemble the crisp card layout
+      // Extract content or descriptions to scan for fallback thumbnail configurations
+      const description = extractTagContent(item, 'description');
+      const contentEncoded = extractTagContent(item, 'content:encoded');
+      const searchBody = (description + ' ' + contentEncoded).toLowerCase();
+
+      // 1. Precise Image fallback parsing from RSS text chunks
+      let thumbnailUrl = 'https://picsum.photos/400/220'; // Base asset template
+      const imgRegex = /<img[^>]+src=["']([^"']+)["']/i;
+      const imageMatch = (contentEncoded || description).match(imgRegex);
+      if (imageMatch && imageMatch[1]) {
+        thumbnailUrl = imageMatch[1];
+      }
+
+      // 2. Tactical Faction Mappings
+      let factionClass = 'uef';
+      let tagLabel = 'FAF // INTEL';
+      const signatureText = (cleanTitle + ' ' + searchBody).toLowerCase();
+
+      if (signatureText.includes('cybran')) {
+        factionClass = 'cybran';
+        tagLabel = 'CYBRAN // DISPATCH';
+      } else if (signatureText.includes('aeon') || signatureText.includes('tournament')) {
+        factionClass = 'aeon';
+        tagLabel = 'AEON // TRANSMISSION';
+      } else if (signatureText.includes('seraphim')) {
+        factionClass = 'seraphim';
+        tagLabel = 'SERAPHIM // ANOMALY';
+      } else if (signatureText.includes('patch') || signatureText.includes('balance')) {
+        factionClass = 'uef';
+        tagLabel = 'UEF // BALANCE';
+      }
+
+      // 3. Text sanitization
+      let cleanExcerpt = description
+        .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+        .replace(/<[^>]*>/g, '') // strip HTML strings
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (cleanExcerpt.length > 130) {
+        cleanExcerpt = cleanExcerpt.substring(0, 125) + '...';
+      }
+      cleanExcerpt = decodeHtmlEntities(cleanExcerpt);
+
+      // Assemble card elements cleanly
       cardsHtml += `
       <article class="card ${factionClass}">
         <div class="corner tl"></div><div class="corner br"></div>
@@ -109,13 +116,12 @@ async function buildSite() {
         <div class="meta">${formattedDate} — LIVE UPDATES</div>
         <h3>${cleanTitle}</h3>
         <p>${cleanExcerpt}</p>
-        <a class="readmore" href="${post.link}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
+        <a class="readmore" href="${postLink}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
       </article>\n`;
     });
 
-    // Read the static workspace layout template
+    // Splice records back into base index tracking arrays
     let template = fs.readFileSync('index.html', 'utf8');
-
     const startMarker = '<div class="feed">';
     const endMarker = '</div>\n\n    <div class="ticker-wrap">'; 
     
@@ -126,15 +132,13 @@ async function buildSite() {
       throw new Error("Target injection strings missing from index.html structure.");
     }
 
-    // Splice the generated news blocks directly into the DOM space
     const updatedHtml = template.substring(0, startIndex) + "\n" + cardsHtml + "    " + template.substring(endIndex);
 
-    // Save to compilation distribution target folder
     if (!fs.existsSync('dist')) fs.mkdirSync('dist');
     fs.writeFileSync('dist/index.html', updatedHtml);
     fs.copyFileSync('style.css', 'dist/style.css');
     
-    console.log("Synchronized successfully! Production build outputted cleanly to /dist.");
+    console.log("Synchronized successfully via RSS Stream! Production build ready in /dist.");
 
   } catch (error) {
     console.error("Critical Synchronization Error:", error);
