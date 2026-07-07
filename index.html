@@ -37,6 +37,13 @@
       </div>
     </header>
 
+    <div class="ticker-wrap">
+      <div class="ticker-label"><span class="dot"></span>UPCOMING</div>
+      <div class="ticker">
+        <span>SUMMER CHAMPIONSHIP — GROUP STAGE — 12 JUL &nbsp;&nbsp;|&nbsp;&nbsp; TEAM LADDER RESET — 15 JUL &nbsp;&nbsp;|&nbsp;&nbsp; MAP CONTEST DEADLINE — 20 JUL &nbsp;&nbsp;|&nbsp;&nbsp; COMMUNITY CAST NIGHT — 26 JUL</span>
+      </div>
+    </div>
+
     <div class="section-label">LATEST BRIEFINGS</div>
 
     <div class="feed" id="news-feed">
@@ -45,12 +52,7 @@
       </div>
     </div>
 
-    <div class="ticker-wrap">
-      <div class="ticker-label"><span class="dot"></span>UPCOMING</div>
-      <div class="ticker">
-        <span>SUMMER CHAMPIONSHIP — GROUP STAGE — 12 JUL &nbsp;&nbsp;|&nbsp;&nbsp; TEAM LADDER RESET — 15 JUL &nbsp;&nbsp;|&nbsp;&nbsp; MAP CONTEST DEADLINE — 20 JUL &nbsp;&nbsp;|&nbsp;&nbsp; COMMUNITY CAST NIGHT — 26 JUL</span>
-      </div>
-    </div>
+
 
     <nav class="footnav">
       <div>
@@ -106,7 +108,7 @@
 
       fetch(NEWSHUB_API)
         .then(function(response) {
-          if (!response.status === 200) throw new Error("Comms Link Interrupted");
+          if (!response.ok) throw new Error("Comms Link Interrupted");
           return response.json();
         })
         .then(function(posts) {
@@ -126,7 +128,7 @@
             return !post.categories || post.categories[1] !== 284;
           });
 
-          filteredPosts.forEach(function(post) {
+          filteredPosts.forEach(function(post, index) {
             var cleanTitle = decodeHtml(post.title.rendered);
 
             // Directly read the custom link array field mapped from FAF's code
@@ -161,8 +163,12 @@
             // Render safe context snippets cleanly
             var rawContent = post.content ? post.content.rendered : '';
             var cleanExcerpt = decodeHtml(rawContent);
-            if (cleanExcerpt.length > 125) {
-              cleanExcerpt = cleanExcerpt.substring(0, 120) + '...';
+
+            var isFeatured = (index === 0);
+            // Give the lead story more room; keep the rest tight for the grid
+            var excerptLimit = isFeatured ? 260 : 125;
+            if (cleanExcerpt.length > excerptLimit) {
+              cleanExcerpt = cleanExcerpt.substring(0, excerptLimit - 5) + '...';
             }
 
             // Create custom timestamps (DD.MMM.YYYY)
@@ -173,18 +179,37 @@
             var year = postDate.getFullYear();
             var formattedDate = day + '.' + month + '.' + year;
 
-            cardsHtml += `
-            <article class="card ${factionClass}">
-              <div class="corner tl"></div><div class="corner br"></div>
-              <div class="card-thumb">
-                <img src="${thumbnailUrl}" alt="${cleanTitle}" loading="lazy">
-              </div>
-              <span class="tag">${tagLabel}</span>
-              <div class="meta">${formattedDate} — SECURE LINK</div>
-              <h3>${cleanTitle}</h3>
-              <p>${cleanExcerpt}</p>
-              <a class="readmore" href="${finalDestinationUrl}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
-            </article>`;
+            if (isFeatured) {
+              cardsHtml += `
+              <article class="card ${factionClass} featured">
+                <div class="corner tl"></div><div class="corner br"></div>
+                <div>
+                  <span class="tag latest">● LATEST</span>
+                  <span class="tag">${tagLabel}</span>
+                  <div class="meta" style="margin-top:12px;">${formattedDate} — SECURE LINK</div>
+                  <h3>${cleanTitle}</h3>
+                  <p>${cleanExcerpt}</p>
+                  <a class="readmore" href="${finalDestinationUrl}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
+                </div>
+                <div class="visual">
+                  <img src="${thumbnailUrl}" alt="${cleanTitle}" loading="lazy">
+                  <span class="coord">LIVE FEED // FAF.NET</span>
+                </div>
+              </article>`;
+            } else {
+              cardsHtml += `
+              <article class="card ${factionClass}">
+                <div class="corner tl"></div><div class="corner br"></div>
+                <div class="card-thumb">
+                  <img src="${thumbnailUrl}" alt="${cleanTitle}" loading="lazy">
+                </div>
+                <span class="tag">${tagLabel}</span>
+                <div class="meta">${formattedDate} — SECURE LINK</div>
+                <h3>${cleanTitle}</h3>
+                <p>${cleanExcerpt}</p>
+                <a class="readmore" href="${finalDestinationUrl}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
+              </article>`;
+            }
           });
 
           feedContainer.innerHTML = cardsHtml;
