@@ -175,9 +175,10 @@
             var cleanExcerpt = decodeHtml(rawContent);
 
             var isFeatured = (index === 0);
-            var excerptLimit = isFeatured ? 260 : 125;
+            var excerptLimit = 300; // Unified 300-character limit across the board
             if (cleanExcerpt.length > excerptLimit) {
-              cleanExcerpt = cleanExcerpt.substring(0, excerptLimit - 5) + '...';
+              // Trims exactly at 297 and adds the 3 dots to hit exactly 300
+              cleanExcerpt = cleanExcerpt.substring(0, excerptLimit - 3) + '...'; 
             }
 
             var postDate = new Date(post.date);
