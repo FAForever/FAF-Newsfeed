@@ -36,6 +36,12 @@
       <p>Deployment dates, seasonal qualifiers, and community cast schedules. Synchronize your systems.</p>
     </header>
 
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+      <button id="week-start-toggle" style="background: rgba(0,0,0,0.2); border: 1px solid var(--phosphor-dim); color: var(--phosphor); font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 0.1em; padding: 6px 12px; cursor: pointer;">
+        WEEK START: SUNDAY
+      </button>
+    </div>
+
     <div id="calendar-root"></div>
 
   </div>
@@ -94,6 +100,7 @@
 
       var calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
+        firstDay: 0, // Default to Sunday start; can be toggled with the button
         displayEventTime: false, // Hides the default FullCalendar time text so our custom bracket looks clean
         headerToolbar: {
           left: 'prev,next today',
@@ -141,6 +148,28 @@
       });
 
       calendar.render();
+
+      // ===== WEEK START TOGGLE LOGIC =====
+      var weekStartsMonday = false;
+      var toggleBtn = document.getElementById('week-start-toggle');
+      
+      toggleBtn.addEventListener('click', function() {
+        weekStartsMonday = !weekStartsMonday; // Flip the boolean
+        
+        // Dynamically update the calendar API without reloading the page
+        calendar.setOption('firstDay', weekStartsMonday ? 1 : 0);
+        
+        // Update the button text to show the current active state
+        toggleBtn.textContent = 'WEEK START: ' + (weekStartsMonday ? 'MONDAY' : 'SUNDAY');
+        
+        // Brief visual flash to mimic terminal interaction
+        toggleBtn.style.backgroundColor = 'var(--phosphor)';
+        toggleBtn.style.color = 'var(--void)';
+        setTimeout(() => {
+          toggleBtn.style.backgroundColor = 'rgba(0,0,0,0.2)';
+          toggleBtn.style.color = 'var(--phosphor)';
+        }, 150);
+      });
       
       // Close Modal Logic (X button)
       document.getElementById('modal-close').addEventListener('click', function() {
