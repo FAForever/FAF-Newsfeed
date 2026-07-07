@@ -27,9 +27,7 @@
 body{
   margin:0;
   font-size:14px;
-  background:
-    /* A luminous tactical glow from the top fading into the void */
-    radial-gradient(ellipse at top, #14261e 0%, var(--void) 70%);
+  background: var(--void); /* Fast solid paint optimization path */
   color:var(--text);
   font-family:'IBM Plex Mono', monospace;
   min-height:100vh;
@@ -46,29 +44,9 @@ body::before{
     linear-gradient(var(--grid-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size:38px 38px;
-  opacity:0.4; /* Brought the opacity up slightly to give the layout great structure */
+  opacity:0.4; 
   pointer-events:none;
   z-index:0;
-}
-
-/* scanline overlay */
-body::after{
-  content:"";
-  position:fixed;
-  inset:0;
-  background:repeating-linear-gradient(
-    0deg,
-    rgba(0,0,0,0.12) 0px, /* Perfectly balanced so it looks like a CRT monitor without crushing text */
-    rgba(0,0,0,0.12) 1px,
-    transparent 2px,
-    transparent 3px
-  );
-  pointer-events:none;
-  z-index:2;
-  /* Deliberately no mix-blend-mode: support for blend modes is inconsistent
-     across older WebKit builds (incl. JavaFX's WebView). Plain semi-transparent
-     stripes over a dark background already read almost identically to the
-     overlay-blended version, without the risk of it rendering as solid bars. */
 }
 
 .frame{
@@ -120,7 +98,7 @@ body::after{
 .hero .corner.tl{top:8px;left:8px;border-top:2px solid;border-left:2px solid;}
 .hero .corner.tr{top:8px;right:8px;border-top:2px solid;border-right:2px solid;}
 .hero .corner.bl{bottom:8px;left:8px;border-bottom:2px solid;border-left:2px solid;}
-.hero .corner.br{bottom:8px;right:8px;border-bottom:2px solid;border-right:2px solid;}
+.hero .corner.br{bottom:8px;right:8px;border-top:2px solid;border-right:2px solid;}
 
 .radar{
   position:absolute;
@@ -144,11 +122,7 @@ body::after{
   width:50%; height:1px;
   background:linear-gradient(90deg, var(--phosphor), transparent);
   transform-origin:left center;
-  animation:sweep 4s linear infinite;
-}
-@keyframes sweep{
-  from{transform:rotate(0deg);}
-  to{transform:rotate(360deg);}
+  transform: rotate(45deg); 
 }
 
 .eyebrow{
@@ -225,9 +199,6 @@ body::after{
 }
 
 /* ===== NEWS FEED ===== */
-/* Flexbox rather than Grid: JavaFX WebView's WebKit build has a history of
-   uneven support for auto-fill/minmax() sizing, so this avoids that risk
-   entirely while keeping the same visual result. */
 .feed{
   display:flex;
   flex-wrap:wrap;
@@ -235,7 +206,7 @@ body::after{
 }
 .feed > .card{
   flex:1 1 300px;
-  min-width:0; /* prevents long words/urls from forcing overflow in flex children */
+  min-width:0; 
 }
 .feed > .card.featured{
   flex-basis:100%;
@@ -263,7 +234,7 @@ body::after{
 .card.aeon{--accent:var(--aeon);}
 .card.seraphim{--accent:var(--seraphim);}
 
-/* ===== FEATURED / LATEST — always full-width lead card ===== */
+/* ===== FEATURED / LATEST ===== */
 .card.featured{
   display:flex;
   flex-wrap:wrap;
@@ -300,7 +271,6 @@ body::after{
   font-size:11px;
 }
 
-/* featured visual panel — reuses the card-thumb holographic treatment, just taller */
 .card.featured > div:first-child{
   flex:1.1 1 320px;
 }
@@ -397,13 +367,13 @@ body::after{
 }
 .card .readmore::after{content:" →";}
 
-/* ===== CARD THUMBNAIL STYLES (CLEAN & CONTAINED) ===== */
+/* ===== CARD THUMBNAIL STYLES ===== */
 .card-thumb {
   position: relative;
   width: 100%;
   height: 150px;
   margin-bottom: 14px;
-  overflow: hidden; /* Keeps the image strictly inside the card */
+  overflow: hidden; 
   border: 1px solid var(--grid-line);
   background: var(--void);
   display: block;
@@ -414,11 +384,10 @@ body::after{
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Fits perfectly without stretching or overflowing */
+  object-fit: cover; 
   max-width: 100%;
 }
 
-/* Subtle holographic tint and scanlines inside the thumbnail box */
 .card-thumb::after {
   content: "";
   position: absolute;
@@ -430,13 +399,11 @@ body::after{
   z-index: 1;
 }
 
-/* Hover effects */
 .card:hover .card-thumb img {
   opacity: 1;
   filter: grayscale(0%) contrast(100%);
-  transform: scale(1.03); /* Tiny scale up stays contained because of overflow:hidden */
+  transform: scale(1.03); 
 }
-
 
 /* ===== TOURNAMENTS TICKER ===== */
 .ticker-wrap{
@@ -513,7 +480,7 @@ body::after{
   .radar{display:none;}
 }
 
-/* ===== SCROLLBAR (WebKit-based engines, incl. JavaFX WebView) ===== */
+/* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar{
   width:10px;
   height:10px;
@@ -527,4 +494,15 @@ body::after{
 }
 ::-webkit-scrollbar-thumb:hover{
   background:var(--phosphor-dim);
+}
+
+/* ===== AUTOMATIC PERFORMANCE FREEZE UTILITY ===== */
+.freeze-frame,
+.freeze-frame *,
+.freeze-frame::before,
+.freeze-frame::after {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
