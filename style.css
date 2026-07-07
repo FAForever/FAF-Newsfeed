@@ -575,3 +575,67 @@ body::before{
   cursor: pointer;
   border-color: var(--amber);
 }
+
+
+/* ===== CALENDAR EVENT TYPE COLOR CODING ===== */
+
+/* 1. Patch Deployment — UEF Cyan Blue */
+.fc-event.ev-patch {
+  background-color: rgba(92, 174, 255, 0.15) !important;
+  border-left: 3px solid var(--uef) !important;
+  border-top: 1px solid rgba(92, 174, 255, 0.3) !important;
+  border-right: 1px solid rgba(92, 174, 255, 0.3) !important;
+  border-bottom: 1px solid rgba(92, 174, 255, 0.3) !important;
+}
+.fc-event.ev-patch .fc-event-title { 
+  color: var(--uef) !important; 
+}
+
+/* 2. Tournament — Cybran Warning Red */
+.fc-event.ev-tournament {
+  background-color: rgba(255, 82, 82, 0.15) !important;
+  border-left: 3px solid var(--cybran) !important;
+  border-top: 1px solid rgba(255, 82, 82, 0.3) !important;
+  border-right: 1px solid rgba(255, 82, 82, 0.3) !important;
+  border-bottom: 1px solid rgba(255, 82, 82, 0.3) !important;
+}
+.fc-event.ev-tournament .fc-event-title { 
+  color: var(--cybran) !important; 
+  font-weight: 600; 
+}
+
+/* 3. Game Night — Terminal Neon Green */
+.fc-event.ev-gamenight {
+  background-color: rgba(78, 255, 162, 0.1) !important;
+  border-left: 3px solid var(--phosphor) !important;
+  border-top: 1px solid rgba(78, 255, 162, 0.2) !important;
+  border-right: 1px solid rgba(78, 255, 162, 0.2) !important;
+  border-bottom: 1px solid rgba(78, 255, 162, 0.2) !important;
+}
+.fc-event.ev-gamenight .fc-event-title { 
+  color: var(--phosphor) !important; 
+}
+
+/* 4. Association Meetings — Seraphim Teal/Mint */
+.fc-event.ev-meeting {
+  background-color: rgba(79, 240, 207, 0.12) !important;
+  border-left: 3px solid var(--seraphim) !important;
+  border-top: 1px solid rgba(79, 240, 207, 0.2) !important;
+  border-right: 1px solid rgba(79, 240, 207, 0.2) !important;
+  border-bottom: 1px solid rgba(79, 240, 207, 0.2) !important;
+}
+.fc-event.ev-meeting .fc-event-title { 
+  color: var(--seraphim) !important; 
+}
+
+/* 5. Supcom Steam Sale — Operational Tactical Amber */
+.fc-event.ev-sale {
+  background-color: rgba(255, 184, 48, 0.12) !important;
+  border-left: 3px solid var(--amber) !important;
+  border-top: 1px solid rgba(255, 184, 48, 0.2) !important;
+  border-right: 1px solid rgba(255, 184, 48, 0.2) !important;
+  border-bottom: 1px solid rgba(255, 184, 48, 0.2) !important;
+}
+.fc-event.ev-sale .fc-event-title { 
+  color: var(--amber) !important; 
+}
