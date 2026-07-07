@@ -13,7 +13,7 @@
 </head>
 <body>
 
-  <div class="statusbar">
+    <div class="statusbar">
       <span>
         <span class="dot"></span>
         <span style="color: var(--phosphor);">BRIEFINGS</span> &nbsp;//&nbsp; 
@@ -26,7 +26,6 @@
 
     <div class="statusbar">
       <span><span class="dot"></span>LINK ESTABLISHED — QUANTUM.GATE.NET</span>
-      <span id="clock">SECTOR TIME —</span>
     </div>
 
     <header class="hero">
@@ -86,13 +85,24 @@
   </div>
 
   <script>
-    // ===== 1. SECTOR CLOCK ENGINE =====
+// ===== 1. SECTOR DUAL-CLOCK ENGINE (UTC / LOCAL) =====
     function updateClock(){
       var el = document.getElementById('clock');
       if(!el) return;
+      
       const now = new Date();
-      const utc = now.toUTCString().split(' ')[4];
-      el.textContent = 'SECTOR TIME — ' + utc + ' UTC';
+      
+      // 1. Calculate UTC Sector Target
+      const utcTime = now.toUTCString().split(' ')[4];
+      
+      // 2. Calculate Local Machine Tracking Metrics
+      const localHours = String(now.getHours()).padStart(2, '0');
+      const localMinutes = String(now.getMinutes()).padStart(2, '0');
+      const localSeconds = String(now.getSeconds()).padStart(2, '0');
+      const localTime = localHours + ':' + localMinutes + ':' + localSeconds;
+      
+      // 3. Render clean HUD readout string
+      el.innerHTML = 'SECTOR TIME — ' + utcTime + ' UTC &nbsp;//&nbsp; LOCAL — ' + localTime;
     }
     updateClock();
     setInterval(updateClock, 1000);
