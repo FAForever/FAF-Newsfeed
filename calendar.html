@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAF // NEWSFEED — EVENTS CALENDAR</title>
+
+  <link rel="stylesheet" href="style.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+
+  <script src="events.js"></script>
+</head>
+<body>
+
+  <div class="frame">
+
+    <div class="statusbar">
+      <span>
+        <span class="dot"></span>
+        <a href="index.html" style="color: inherit; text-decoration: none;">BRIEFINGS</a> &nbsp;//&nbsp; 
+        <span style="color: var(--phosphor);">CALENDAR_GRID</span>
+      </span>
+      <span id="clock">SECTOR TIME —</span>
+    </div>
+
+    <header class="hero">
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="radar"></div>
+      <div class="eyebrow">// OPERATIONAL TIMELINES</div>
+      <h1>EVENTS CALENDAR<span class="cursor">&nbsp;</span></h1>
+      <p>Deployment dates, seasonal qualifiers, and community cast schedules. Synchronize your systems.</p>
+    </header>
+
+    <div id="calendar-root"></div>
+
+  </div>
+
+  <script>
+    // ===== 1. SECTOR CLOCK ENGINE =====
+    function updateClock(){
+      var el = document.getElementById('clock');
+      if(!el) return;
+      const now = new Date();
+      const utc = now.toUTCString().split(' ')[4];
+      el.textContent = 'SECTOR TIME — ' + utc + ' UTC';
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // ===== 2. CALENDAR INITIALIZATION =====
+    document.addEventListener('DOMContentLoaded', function() {
+      var calendarEl = document.getElementById('calendar-root');
+      
+      var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek'
+        },
+        
+        // Bypasses file:// sandbox locks by assigning the global array cleanly
+        events: typeof fafEventsData !== 'undefined' ? fafEventsData : [],
+        
+        eventClick: function(info) {
+          if (info.event.url) {
+            info.jsEvent.preventDefault();
+            window.open(info.event.url, '_blank');
+          }
+        }
+      });
+
+      calendar.render();
+    });
+  </script>
+
+</body>
+</html>

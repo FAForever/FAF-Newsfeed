@@ -506,3 +506,72 @@ body::before{
   transform: none !important;
   box-shadow: none !important;
 }
+
+/* ===== FULLCALENDAR OVERRIDES (TACTICAL HUD THEME) ===== */
+.fc {
+  font-family: 'Share Tech Mono', monospace;
+  background: var(--panel);
+  border: 1px solid var(--grid-line);
+  padding: 20px;
+  color: var(--text);
+}
+
+/* Header toolbar text and button configurations */
+.fc .fc-toolbar-title {
+  font-size: 20px;
+  letter-spacing: 0.1em;
+  color: var(--phosphor);
+}
+.fc .fc-button-primary {
+  background-color: var(--void);
+  border-color: var(--grid-line);
+  color: var(--phosphor-dim);
+  font-family: 'Share Tech Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.fc .fc-button-primary:hover,
+.fc .fc-button-primary:focus {
+  background-color: var(--phosphor);
+  color: var(--void) !important;
+  border-color: var(--phosphor);
+  box-shadow: 0 0 10px rgba(78,255,162,0.3);
+}
+.fc .fc-button-active {
+  background-color: var(--panel-2) !important;
+  border-color: var(--phosphor) !important;
+  color: var(--phosphor) !important;
+}
+
+/* Grid borders and cell properties */
+.fc th {
+  background: var(--panel-2);
+  color: var(--amber);
+  border-color: var(--grid-line) !important;
+  padding: 8px 0 !important;
+  letter-spacing: 0.1em;
+}
+.fc td {
+  border-color: var(--grid-line) !important;
+}
+.fc .fc-day-other {
+  background: rgba(0, 0, 0, 0.2); /* Dim out-of-month days */
+}
+.fc .fc-day-today {
+  background: rgba(78, 255, 162, 0.04) !important; /* Luminous target highlight */
+}
+
+/* Inside-grid event bars */
+.fc-v-event, .fc-h-event {
+  background-color: var(--panel-2);
+  border: 1px solid var(--phosphor-dim);
+  padding: 2px 4px;
+}
+.fc-event-title, .fc-event-time {
+  color: var(--phosphor);
+  font-size: 11px;
+}
+.fc-event:hover {
+  cursor: pointer;
+  border-color: var(--amber);
+}
