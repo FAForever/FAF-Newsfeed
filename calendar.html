@@ -40,24 +40,24 @@
 
   </div>
 
-  <script>
-// ===== 1. SECTOR DUAL-CLOCK ENGINE (UTC / LOCAL) =====
+<script>
+    // ===== 1. SECTOR DUAL-CLOCK ENGINE (UTC / LOCAL) =====
     function updateClock(){
       var el = document.getElementById('clock');
       if(!el) return;
       
       const now = new Date();
       
-      // 1. Calculate UTC Sector Target
+      // Calculate UTC Sector Target
       const utcTime = now.toUTCString().split(' ')[4];
       
-      // 2. Calculate Local Machine Tracking Metrics
+      // Calculate Local Machine Tracking Metrics
       const localHours = String(now.getHours()).padStart(2, '0');
       const localMinutes = String(now.getMinutes()).padStart(2, '0');
       const localSeconds = String(now.getSeconds()).padStart(2, '0');
       const localTime = localHours + ':' + localMinutes + ':' + localSeconds;
       
-      // 3. Render clean HUD readout string
+      // Render clean HUD readout string
       el.innerHTML = 'SECTOR TIME — ' + utcTime + ' UTC &nbsp;//&nbsp; LOCAL — ' + localTime;
     }
     updateClock();
@@ -67,26 +67,92 @@
     document.addEventListener('DOMContentLoaded', function() {
       var calendarEl = document.getElementById('calendar-root');
       
+      // --- TIMEZONE INTERCEPTOR ---
+      // Automatically calculates the user's local time for any event with a specific hour
+      var processedEvents = [];
+      if (typeof fafEventsData !== 'undefined') {
+        processedEvents = fafEventsData.map(function(ev) {
+          // Check if the event has a specific time (contains a 'T' in the timestamp)
+          if (ev.start && ev.start.indexOf('T') !== -1) {
+            // Ensure the browser reads the original timestamp as UTC by appending 'Z'
+            var utcString = ev.start.endsWith('Z') ? ev.start : ev.start + 'Z';
+            var localDate = new Date(utcString);
+            
+            // Format to a clean 24-hour tactical clock (e.g., "19:00")
+            var hrs = String(localDate.getHours()).padStart(2, '0');
+            var mins = String(localDate.getMinutes()).padStart(2, '0');
+            
+            // Clone the event and inject the local time bracket into the title
+            return Object.assign({}, ev, {
+              title: ev.title + ' [' + hrs + ':' + mins + ' LOCAL]',
+              start: utcString // Feed the strict UTC time to the grid
+            });
+          }
+          return ev; // Return all-day events unchanged
+        });
+      }
+
       var calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
+        displayEventTime: false, // Hides the default FullCalendar time text so our custom bracket looks clean
         headerToolbar: {
           left: 'prev,next today',
           center: 'title',
           right: 'dayGridMonth,timeGridWeek'
         },
         
-        // Bypasses file:// sandbox locks by assigning the global array cleanly
-        events: typeof fafEventsData !== 'undefined' ? fafEventsData : [],
+        // Pass the newly processed timezone array
+        events: processedEvents,
         
-        eventClick: function(info) {
-          if (info.event.url) {
-            info.jsEvent.preventDefault();
-            window.open(info.event.url, '_blank');
+        // Fires right as the event is drawn on the grid to attach the native tooltip
+        eventDidMount: function(info) {
+          if (info.event.extendedProps.description) {
+            info.el.title = info.event.extendedProps.description;
           }
+        },
+        
+        // ===== MODAL CLICK INTERCEPT =====
+        eventClick: function(info) {
+          info.jsEvent.preventDefault(); // Stops instant navigation if there's a URL
+
+          var modal = document.getElementById('event-modal');
+          var titleEl = document.getElementById('modal-title');
+          var dateEl = document.getElementById('modal-date');
+          var descEl = document.getElementById('modal-desc');
+          var linkEl = document.getElementById('modal-link');
+
+          titleEl.textContent = info.event.title;
+          
+          var sd = info.event.start;
+          var months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+          dateEl.textContent = 'DATE: ' + String(sd.getDate()).padStart(2, '0') + ' ' + months[sd.getMonth()] + ' ' + sd.getFullYear();
+
+          descEl.textContent = info.event.extendedProps.description || 'No additional intel provided for this timeline event.';
+
+          if (info.event.url) {
+            linkEl.href = info.event.url;
+            linkEl.style.display = 'inline-block';
+          } else {
+            linkEl.style.display = 'none';
+          }
+
+          modal.style.display = 'flex';
         }
       });
 
       calendar.render();
+      
+      // Close Modal Logic (X button)
+      document.getElementById('modal-close').addEventListener('click', function() {
+        document.getElementById('event-modal').style.display = 'none';
+      });
+
+      // Close Modal Logic (Clicking the dark background)
+      document.getElementById('event-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.style.display = 'none';
+        }
+      });
     });
   </script>
 

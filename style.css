@@ -508,6 +508,22 @@ body::before{
 }
 
 /* ===== FULLCALENDAR OVERRIDES (TACTICAL HUD THEME) ===== */
+/* ===== ALLOW EVENT TEXT TO WRAP ===== */
+.fc-direction-ltr .fc-daygrid-event .fc-event-time,
+.fc-direction-ltr .fc-daygrid-event .fc-event-title,
+.fc-event-main {
+  white-space: normal !important; /* Forces text to wrap to the next line */
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-wrap: break-word !important;
+}
+
+/* Ensure the event bar height expands to fit the wrapped text */
+.fc-h-event {
+  height: auto !important;
+  padding-bottom: 4px !important;
+}
+
 .fc {
   font-family: 'Share Tech Mono', monospace;
   background: var(--panel);
@@ -638,4 +654,84 @@ body::before{
 }
 .fc-event.ev-sale .fc-event-title { 
   color: var(--amber) !important; 
+}
+
+
+/* ===== EVENT MODAL OVERLAY ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 13, 0.85); /* Darkens the rest of the app */
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-box {
+  background: var(--panel-2);
+  border: 1px solid var(--phosphor-dim);
+  width: 90%;
+  max-width: 480px;
+  padding: 24px;
+  position: relative;
+  box-shadow: 0 0 0 1px var(--phosphor), 0 8px 32px -8px rgba(0,0,0,0.8);
+}
+.modal-box .corner { position: absolute; width: 14px; height: 14px; border-color: var(--phosphor); }
+.modal-box .corner.tl { top: -1px; left: -1px; border-top: 2px solid; border-left: 2px solid; }
+.modal-box .corner.br { bottom: -1px; right: -1px; border-bottom: 2px solid; border-right: 2px solid; }
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.modal-header h3 {
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--phosphor);
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: 0.05em;
+}
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 28px;
+  cursor: pointer;
+  line-height: 0.8;
+  padding: 0;
+  transition: color 0.2s;
+}
+.close-btn:hover { color: var(--red); }
+
+.modal-body .meta {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--amber);
+  margin-bottom: 16px;
+  letter-spacing: 0.1em;
+}
+.modal-body p {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+.modal-body .readmore {
+  display: inline-block;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--uef);
+  text-decoration: none;
+  border: 1px solid var(--uef);
+  padding: 8px 16px;
+  background: rgba(0,0,0,0.2);
+  transition: all 0.2s;
+}
+.modal-body .readmore:hover {
+  background: var(--uef);
+  color: var(--void);
 }
