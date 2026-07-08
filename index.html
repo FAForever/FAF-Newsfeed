@@ -3,14 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>FAF // NEWSFEED — TACTICAL FEED</title>
-
   <link rel="stylesheet" href="assets/css/core.css">
   <link rel="stylesheet" href="assets/css/components.css">
   <link rel="stylesheet" href="assets/css/cards.css">
   <script src="assets/js/engine.js"></script>
-  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -22,13 +19,11 @@
         <span style="color: var(--phosphor);">BRIEFINGS</span> &nbsp;//&nbsp; 
         <a href="calendar.html" style="color: inherit; text-decoration: none;">OPERATIONAL TIMELINES</a> &nbsp;//&nbsp; 
         <a href="archive.html" style="color: inherit; text-decoration: none;">DATABANK_ARCHIVE</a>
-        
       </span>
       <span id="clock">SECTOR TIME —</span>
     </div>
 
   <div class="frame">
-
     <div class="statusbar">
       <span><span class="dot"></span>LINK ESTABLISHED — QUANTUM.GATE.NET</span>
     </div>
@@ -86,17 +81,18 @@
         <a href="https://wiki.faforever.com/en/Infrastructure/Vault-Rules">Vault Rules</a>
       </div>
     </nav>
-
   </div>
 
-<script>
+  <!-- FEEDBACK COMMS UPLINK -->
+  <a href="https://forms.gle/x5Wz3cku7mcNgupE7" target="_blank" rel="noopener noreferrer" class="comms-feedback-btn">// FEEDBACK COMMS</a>
+
+  <script>
     function initNewsfeed() {
       var feedContainer = document.getElementById('news-feed'); 
       if (!feedContainer) return;
 
       var API_URL = "https://direct.faforever.com/wp-json/wp/v2/posts/?per_page=15&_embed&_fields=_links.author,_links.wp:featuredmedia,_embedded,title,excerpt,newshub_externalLinkUrl,link,newshub_sortIndex,date,categories,slug&categories=283";
 
-      // Isolated profile call using key segmentation
       fetchFAFData(API_URL, "front_page_cache",
         function(posts) {
           posts.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
@@ -131,9 +127,7 @@
               <article class="card ${faction.class} featured">
                 <div class="corner tl"></div><div class="corner br"></div>
                 <div>
-                  <span class="tag latest">● LATEST</span>
-                  <span class="tag">${faction.label}</span>
-                  <div class="meta" style="margin-top:12px;">${formattedDate} — SECURE LINK</div>
+                  <div class="meta" style="margin-top:4px;">${formattedDate} — SECURE LINK</div>
                   <h3>${cleanTitle}</h3>
                   <p>${cleanExcerpt}</p>
                   <a class="readmore" href="${finalUrl}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
@@ -150,7 +144,6 @@
                 <div class="card-thumb">
                   <img src="${thumbnailUrl}" alt="${cleanTitle}" loading="lazy">
                 </div>
-                <span class="tag">${faction.label}</span>
                 <div class="meta">${formattedDate} — SECURE LINK</div>
                 <h3>${cleanTitle}</h3>
                 <p>${cleanExcerpt}</p>
@@ -200,9 +193,5 @@
       initNewsfeed();
     };
   </script>
-
-<!-- FEEDBACK COMMS UPLINK -->
-  <a href="https://forms.gle/x5Wz3cku7mcNgupE7" target="_blank" rel="noopener noreferrer" class="comms-feedback-btn">// FEEDBACK COMMS</a>
-</body>
 </body>
 </html>
