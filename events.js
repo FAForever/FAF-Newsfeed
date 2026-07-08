@@ -1,18 +1,17 @@
 // Global event stream color-coded by event category parameters
 const fafEventsData = [
   {
-    "title": "PATCH DEPLOYMENT // STABLE HOTFIX",
-    "start": "2026-07-08",
+    "title": "Balance Patch 3836 Deployed",
+    "start": "2026-05-26",
     "className": "ev-patch",
-    "description": "Minor balance adjustments for T3 artillery and pathing bug fixes."
+    "description": "The Commissar’s video for this month’s balance patch is up! Check out what’s been changed in the patch 3836 – new HQs, navy changes and more!"
   },
   {
-    "title": "SUMMER CHAMPIONSHIP - STAGE 1",
-    "start": "2026-07-12",
-    "end": "2026-07-14",
-    "url": "https://forum.faforever.com",
+    "title": "Seton's Summer Slam 2",
+    "start": "2026-07-18T15:00:00Z",
+    "url": "https://forum.faforever.com/topic/10211/seton-s-summer-slam-2",
     "className": "ev-tournament",
-    "description": "Top 16 players battle in the group stages. Hosted by the FAF Tournament Team."
+    "description": "Summer is here, which brings with it the mid year Seton’s tournament! This tournament will be a simple double-elimination bracket alongside an 8 team captain and player draft."
   },
   {
     "title": "COMMUNITY GAME NIGHT",
@@ -20,17 +19,17 @@ const fafEventsData = [
     "className": "ev-gamenight",
     "description": "Open lobbies for all skill levels. Join the Discord voice channels!"
   },
-  {
-    "title": "FAF ASSOCIATION BOARD MEETING",
-    "start": "2026-07-19T18:00:00Z", // <--- Added Z for UTC
-    "className": "ev-meeting",
-    "description": "Public general meeting to discuss server infrastructure and roadmap."
-  },
-  {
-    "title": "STEAM SALE // SUPREME COMMANDER 80% OFF",
-    "start": "2026-07-23",
-    "end": "2026-07-30",
-    "className": "ev-sale",
-    "description": "The perfect time to recruit new commanders to the battlefield."
-  }
+  //{
+  //  "title": "FAF ASSOCIATION BOARD MEETING",
+  //  "start": "2026-07-19T18:00:00Z", // <--- Added Z for UTC
+  //  "className": "ev-meeting",
+  //  "description": "Public general meeting to discuss server infrastructure and roadmap."
+  //},
+  //{
+  //  "title": "STEAM SALE // SUPREME COMMANDER 80% OFF",
+  //  "start": "2026-07-23",
+  //  "end": "2026-07-30",
+  //  "className": "ev-sale",
+  //  "description": "The perfect time to recruit new commanders to the battlefield."
+  //}
 ];
