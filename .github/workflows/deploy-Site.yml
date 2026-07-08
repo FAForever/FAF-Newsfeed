@@ -1,0 +1,61 @@
+name: Deploy Tactical News Hub
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    # Automatically triggers every 6 hours to fetch fresh FAF map rotations independent of pushes
+    - cron: '0 */6 * * *'
+  workflow_dispatch: {} # Allows manual force-refresh clicks inside GitHub UI
+
+permissions:
+  contents: write # Upgraded to write so the action can commit data back to the repo
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch Map Pool Data from FAF API
+        run: node scripts/fetch-map-pools.js
+
+      - name: Commit Updated Data Layer (If Changed)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/map-pools.json
+          if git diff --staged --quiet; then
+            echo "No structural map rotation updates identified."
+          else
+            git commit -m "chore: automated faf matchmaking map pool cache refresh [skip ci]"
+            git push
+          fi
+
+      - name: Setup Pages Infrastructure
+        uses: actions/configure-pages@v5
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.' # Deploys your structural markup alongside the generated data folder
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
