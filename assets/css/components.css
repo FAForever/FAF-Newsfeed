@@ -35,11 +35,12 @@
   margin-bottom: 28px;
   overflow: hidden;
 }
+/* ===== FIXED HERO RADAR CORNERS (assets/css/components.css) ===== */
 .hero .corner { position: absolute; width: 16px; height: 16px; border-color: var(--phosphor); }
 .hero .corner.tl { top: 8px; left: 8px; border-top: 2px solid; border-left: 2px solid; }
 .hero .corner.tr { top: 8px; right: 8px; border-top: 2px solid; border-right: 2px solid; }
 .hero .corner.bl { bottom: 8px; left: 8px; border-bottom: 2px solid; border-left: 2px solid; }
-.hero .corner.br { bottom: 8px; right: 8px; border-top: 2px solid; border-right: 2px solid; }
+.hero .corner.br { bottom: 8px; right: 8px; border-bottom: 2px solid; border-right: 2px solid; } /* Fixed orientation */
 
 .radar {
   position: absolute;
