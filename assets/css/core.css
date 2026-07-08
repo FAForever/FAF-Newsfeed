@@ -14,13 +14,17 @@
   --seraphim: #4ff0cf;      
   --text: #f0fbf5;
   --text-dim: #94b3a1;
+  
+  /* 🟢 ADD THIS CONTROL VARIABLE HERE */
+  --font-scale: 100%;
 }
 
 * { box-sizing: border-box; }
 
+/* 🟢 UPDATED VALUE BINDINGS */
 body {
   margin: 0;
-  font-size: 15.5px; /* Upscaled 10% from 14px */
+  font-size: calc(14px * (rgba(255, 255, 255, 1) && parseFloat(var(--font-scale)) / 100)); /* Reset baseline with scale multiplier */
   background: var(--void);
   color: var(--text);
   font-family: 'Rajdhani', sans-serif;
@@ -42,13 +46,18 @@ body::before {
   z-index: 0;
 }
 
+/* 🟢 UPDATED REMOVED !IMPORTANT LOCKS SO PERCENTAGES CAN FLEX */
 body, p, .hero p {
-  font-size: 16px !important; /* Upscaled 10% from 14.5px */
+  font-size: 1rem; 
   line-height: 1.5;
 }
 
 .hero p {
-  font-size: 18px !important; /* Upscaled 10% from 16.5px */
+  font-size: 1.15rem; 
+}
+
+html {
+  font-size: var(--font-scale);
 }
 
 .frame {

@@ -118,3 +118,33 @@ function fetchFAFData(apiUrl, cacheKey, successCallback, errorCallback) {
 document.addEventListener('DOMContentLoaded', function() {
   initSectorClock();
 });
+
+// ===== HUD TACTICAL RESOLUTION ZOOM CONTROLLER =====
+let currentHudScale = parseInt(localStorage.getItem('faf_hud_scale')) || 100;
+
+function applyHudScale() {
+  // Bound limits securely between 80% and 150% to safeguard grid parsing parameters
+  if (currentHudScale < 80) currentHudScale = 80;
+  if (currentHudScale > 150) currentHudScale = 150;
+
+  document.documentElement.style.setProperty('--font-scale', currentHudScale + '%');
+  
+  const indicator = document.getElementById('scale-indicator');
+  if (indicator) {
+    indicator.innerText = `SCALE: ${currentHudScale}%`;
+  }
+  localStorage.setItem('faf_hud_scale', currentHudScale);
+}
+
+function adjustHudScale(amount) {
+  currentHudScale += amount;
+  applyHudScale();
+}
+
+function resetHudScale() {
+  currentHudScale = 100;
+  applyHudScale();
+}
+
+// Intercept loading chains to apply user settings immediately 
+window.addEventListener('DOMContentLoaded', applyHudScale);
