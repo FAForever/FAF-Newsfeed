@@ -8,26 +8,31 @@
   --phosphor-dim: #518c68;
   --amber: #ffb830;
   --red: #ff6666;
+  
+  /* Faction Identity Channels - EXCLUSIVE MEANING */
   --uef: #5caeff;           
   --cybran: #ff5252;        
   --aeon: #ffd042;          
   --seraphim: #4ff0cf;      
+  
   --text: #f0fbf5;
   --text-dim: #94b3a1;
-  
-  /* 🟢 ADD THIS CONTROL VARIABLE HERE */
   --font-scale: 100%;
 }
 
 * { box-sizing: border-box; }
 
-/* 🟢 UPDATED VALUE BINDINGS */
+html {
+  font-size: var(--font-scale);
+}
+
 body {
   margin: 0;
-  font-size: calc(14px * (rgba(255, 255, 255, 1) && parseFloat(var(--font-scale)) / 100)); /* Reset baseline with scale multiplier */
   background: var(--void);
   color: var(--text);
   font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
@@ -41,23 +46,9 @@ body::before {
     linear-gradient(var(--grid-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 38px 38px;
-  opacity: 0.4; 
+  opacity: 0.3; 
   pointer-events: none;
   z-index: 0;
-}
-
-/* 🟢 UPDATED REMOVED !IMPORTANT LOCKS SO PERCENTAGES CAN FLEX */
-body, p, .hero p {
-  font-size: 1rem; 
-  line-height: 1.5;
-}
-
-.hero p {
-  font-size: 1.15rem; 
-}
-
-html {
-  font-size: var(--font-scale);
 }
 
 .frame {
