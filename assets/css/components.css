@@ -219,3 +219,51 @@
   transform: none !important;
   box-shadow: none !important;
 }
+
+/* ===== FLOATING FEEDBACK COMMS BUTTON ===== */
+.comms-feedback-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: var(--phosphor);
+  background: var(--panel);
+  border: 1px solid var(--phosphor-dim);
+  padding: 10px 16px;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.comms-feedback-btn::before {
+  content: " ";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--phosphor);
+  box-shadow: 0 0 6px var(--phosphor);
+}
+
+.comms-feedback-btn:hover {
+  background: var(--phosphor);
+  color: var(--void);
+  border-color: var(--phosphor);
+  box-shadow: 0 0 14px rgba(78, 255, 162, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Hide on ultra-small viewport heights if it blocks layout pagination */
+@media (max-height: 400px) {
+  .comms-feedback-btn {
+    display: none;
+  }
+}
