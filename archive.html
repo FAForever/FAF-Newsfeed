@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAF // NEWSFEED — DATABANK ARCHIVE</title>
+
+  <link rel="stylesheet" href="style.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <div class="frame">
+
+    <div class="statusbar">
+      <span>
+        <span class="dot"></span>
+        <a href="index.html" style="color: inherit; text-decoration: none;">BRIEFINGS</a> &nbsp;//&nbsp; 
+        <a href="calendar.html" style="color: inherit; text-decoration: none;">CALENDAR_GRID</a> &nbsp;//&nbsp; 
+        <span style="color: var(--phosphor);">DATABANK_ARCHIVE</span>
+      </span>
+      <span id="clock">SECTOR TIME —</span>
+    </div>
+
+    <header class="hero">
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="radar"></div>
+      <div class="eyebrow">// HISTORICAL RECORDS</div>
+      <h1>DATABANK ARCHIVE<span class="cursor">&nbsp;</span></h1>
+      <p>Access historical deployment logs, past tournament brackets, and legacy patch intel. All previously broadcasted transmissions are stored here.</p>
+    </header>
+
+    <div class="section-label">DECRYPTED LOGS</div>
+
+    <div class="archive-list" id="archive-feed">
+      <div style="color: var(--phosphor-dim); font-family: 'Share Tech Mono', monospace; text-align: center; padding: 40px 0; letter-spacing: 0.1em;">
+        ACCESSING QUANTUM STORAGE — RETRIEVING LOGS...
+      </div>
+    </div>
+
+    <!-- NEW: PAGINATION CONTROLS -->
+    <div id="pagination-controls" class="pagination"></div>
+
+  </div>
+
+  <script>
+    // ===== 1. SECTOR CLOCK ENGINE =====
+    function updateClock(){
+      var el = document.getElementById('clock');
+      if(!el) return;
+      const now = new Date();
+      const utcTime = now.toUTCString().split(' ')[4];
+      const localHours = String(now.getHours()).padStart(2, '0');
+      const localMinutes = String(now.getMinutes()).padStart(2, '0');
+      const localSeconds = String(now.getSeconds()).padStart(2, '0');
+      el.innerHTML = 'SECTOR TIME — ' + utcTime + ' UTC &nbsp;//&nbsp; LOCAL — ' + localHours + ':' + localMinutes + ':' + localSeconds;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    function decodeHtml(html) {
+      var txt = document.createElement("textarea");
+      txt.innerHTML = html;
+      return txt.value.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    // ===== 2. ARCHIVE FEED FETCH ENGINE (PAGINATED) =====
+    var allArchivedPosts = [];
+    var currentPage = 1;
+    var postsPerPage = 20;
+
+    function fetchArchiveFeed() {
+      var feedContainer = document.getElementById('archive-feed');
+      if (!feedContainer) return;
+
+      // Increased per_page to 100 to ensure a deep archive is loaded into memory
+      var ARCHIVE_API = "https://direct.faforever.com/wp-json/wp/v2/posts/?per_page=100&_fields=title,newshub_externalLinkUrl,link,newshub_sortIndex,date,categories,slug&categories=283";
+
+      fetch(ARCHIVE_API)
+        .then(function(response) {
+          if (!response.ok) throw new Error("Databank Offline");
+          return response.json();
+        })
+        .then(function(posts) {
+          // 1. Sort the posts by Date (Newest to Oldest)
+          posts.sort(function(a, b) {
+            return new Date(b.date) - new Date(a.date);
+          });
+
+          // 2. Filter out exclusion categories
+          var filteredPosts = posts.filter(function(post) {
+            return !post.categories || post.categories[1] !== 284;
+          });
+
+          // 3. Slice off the first 6 (currently active on the main page)
+          // Store the remainder in our global array for pagination
+          allArchivedPosts = filteredPosts.slice(6);
+
+          if(allArchivedPosts.length === 0) {
+            feedContainer.innerHTML = '<div style="color: var(--amber); font-family: monospace; text-align: center;">NO ARCHIVED LOGS FOUND.</div>';
+            return;
+          }
+
+          // Render the first 20 posts
+          renderPage(1);
+        })
+        .catch(function(err) {
+          console.error("Archive Failure:", err);
+          feedContainer.innerHTML = `<div style="color: var(--red); text-align: center; padding: 40px;">DATABANK ACCESS DENIED // FIREWALL ACTIVE</div>`;
+        });
+    }
+
+    function renderPage(pageNumber) {
+      currentPage = pageNumber;
+      var feedContainer = document.getElementById('archive-feed');
+      var rowsHtml = '';
+
+      // Calculate start and end indexes for slicing the array
+      var startIndex = (currentPage - 1) * postsPerPage;
+      var endIndex = startIndex + postsPerPage;
+      var postsToRender = allArchivedPosts.slice(startIndex, endIndex);
+
+      postsToRender.forEach(function(post) {
+        var cleanTitle = decodeHtml(post.title.rendered);
+        var finalDestinationUrl = post.newshub_externalLinkUrl || post.link || '#';
+
+        // Faction coloring logic
+        var factionColor = 'var(--uef)';
+        var tagLabel = 'FAF // NEWS';
+        var matchTarget = (cleanTitle + ' ' + (post.slug || '')).toLowerCase();
+
+        if (matchTarget.indexOf('cybran') !== -1) { factionColor = 'var(--cybran)'; tagLabel = 'CYBRAN // INTEL'; } 
+        else if (matchTarget.indexOf('aeon') !== -1 || matchTarget.indexOf('tournament') !== -1) { factionColor = 'var(--aeon)'; tagLabel = 'AEON // PROTOCOL'; } 
+        else if (matchTarget.indexOf('seraphim') !== -1) { factionColor = 'var(--seraphim)'; tagLabel = 'SERAPHIM // SIGNAL'; }
+
+        // Date Formatting
+        var postDate = new Date(post.date);
+        var day = String(postDate.getDate()).padStart(2, '0');
+        var months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+        var month = months[postDate.getMonth()];
+        var year = postDate.getFullYear();
+        var formattedDate = day + ' ' + month + ' ' + year;
+
+        rowsHtml += `
+          <a href="${finalDestinationUrl}" target="_blank" rel="noopener noreferrer" class="archive-row">
+            <div class="date">${formattedDate}</div>
+            <div class="tag" style="color: ${factionColor}; border-color: ${factionColor};">${tagLabel}</div>
+            <div class="title">${cleanTitle}</div>
+            <div class="icon">READ LOG →</div>
+          </a>
+        `;
+      });
+
+      feedContainer.innerHTML = rowsHtml;
+      
+      // Update the pagination buttons
+      renderPaginationControls();
+      
+      // Auto-scroll back up to the top of the list
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderPaginationControls() {
+      var controlsContainer = document.getElementById('pagination-controls');
+      var totalPages = Math.ceil(allArchivedPosts.length / postsPerPage);
+
+      if (totalPages <= 1) {
+        controlsContainer.innerHTML = '';
+        return;
+      }
+
+      var html = '';
+      
+      // PREV button
+      if (currentPage > 1) {
+        html += `<button onclick="renderPage(${currentPage - 1})">← PREV</button>`;
+      } else {
+        html += `<button disabled style="opacity: 0.3; cursor: not-allowed;">← PREV</button>`;
+      }
+
+      // PAGE readout
+      html += `<span class="page-info">PAGE ${currentPage} OF ${totalPages}</span>`;
+
+      // NEXT button
+      if (currentPage < totalPages) {
+        html += `<button onclick="renderPage(${currentPage + 1})">NEXT →</button>`;
+      } else {
+        html += `<button disabled style="opacity: 0.3; cursor: not-allowed;">NEXT →</button>`;
+      }
+
+      controlsContainer.innerHTML = html;
+    }
+
+    window.onload = function() {
+      fetchArchiveFeed();
+    };
+  </script>
+</body>
+</html>
