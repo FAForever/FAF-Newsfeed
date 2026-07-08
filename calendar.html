@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FAF // NEWSFEED — EVENTS CALENDAR</title>
 
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="assets/css/core.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/calendar.css">
+  <script src="assets/js/engine.js"></script>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -48,80 +51,52 @@
   </div>
 
 <script>
-    // ===== 1. SECTOR DUAL-CLOCK ENGINE (UTC / LOCAL) =====
-    function updateClock(){
-      var el = document.getElementById('clock');
-      if(!el) return;
-      
-      const now = new Date();
-      
-      // Calculate UTC Sector Target
-      const utcTime = now.toUTCString().split(' ')[4];
-      
-      // Calculate Local Machine Tracking Metrics
-      const localHours = String(now.getHours()).padStart(2, '0');
-      const localMinutes = String(now.getMinutes()).padStart(2, '0');
-      const localSeconds = String(now.getSeconds()).padStart(2, '0');
-      const localTime = localHours + ':' + localMinutes + ':' + localSeconds;
-      
-      // Render clean HUD readout string
-      el.innerHTML = 'SECTOR TIME — ' + utcTime + ' UTC &nbsp;//&nbsp; LOCAL — ' + localTime;
-    }
-    updateClock();
-    setInterval(updateClock, 1000);
+    // Note: The Sector Clock is now automatically handled in the background by engine.js!
 
-    // ===== 2. CALENDAR INITIALIZATION =====
+    // ===== CALENDAR INITIALIZATION =====
     document.addEventListener('DOMContentLoaded', function() {
       var calendarEl = document.getElementById('calendar-root');
       
       // --- TIMEZONE INTERCEPTOR ---
-      // Automatically calculates the user's local time for any event with a specific hour
       var processedEvents = [];
       if (typeof fafEventsData !== 'undefined') {
         processedEvents = fafEventsData.map(function(ev) {
-          // Check if the event has a specific time (contains a 'T' in the timestamp)
           if (ev.start && ev.start.indexOf('T') !== -1) {
-            // Ensure the browser reads the original timestamp as UTC by appending 'Z'
             var utcString = ev.start.endsWith('Z') ? ev.start : ev.start + 'Z';
             var localDate = new Date(utcString);
-            
-            // Format to a clean 24-hour tactical clock (e.g., "19:00")
             var hrs = String(localDate.getHours()).padStart(2, '0');
             var mins = String(localDate.getMinutes()).padStart(2, '0');
             
-            // Clone the event and inject the local time bracket into the title
             return Object.assign({}, ev, {
               title: ev.title + ' [' + hrs + ':' + mins + ' LOCAL]',
-              start: utcString // Feed the strict UTC time to the grid
+              start: utcString 
             });
           }
-          return ev; // Return all-day events unchanged
+          return ev; 
         });
       }
 
       var calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
-        firstDay: 0, // Default to Sunday start; can be toggled with the button
-        displayEventTime: false, // Hides the default FullCalendar time text so our custom bracket looks clean
+        firstDay: 0, // Starts on Sunday by default
+        displayEventTime: false, 
         headerToolbar: {
           left: 'prev,next today',
           center: 'title',
           right: 'dayGridMonth,timeGridWeek'
         },
         
-        // Pass the newly processed timezone array
         events: processedEvents,
         
-        // Fires right as the event is drawn on the grid to attach the native tooltip
         eventDidMount: function(info) {
           if (info.event.extendedProps.description) {
             info.el.title = info.event.extendedProps.description;
           }
         },
         
-        // ===== MODAL CLICK INTERCEPT =====
+        // --- MODAL CLICK INTERCEPT ---
         eventClick: function(info) {
-          info.jsEvent.preventDefault(); // Stops instant navigation if there's a URL
+          info.jsEvent.preventDefault(); 
 
           var modal = document.getElementById('event-modal');
           var titleEl = document.getElementById('modal-title');
@@ -149,40 +124,36 @@
       });
 
       calendar.render();
-
-      // ===== WEEK START TOGGLE LOGIC =====
-      var weekStartsMonday = false;
-      var toggleBtn = document.getElementById('week-start-toggle');
       
-      toggleBtn.addEventListener('click', function() {
-        weekStartsMonday = !weekStartsMonday; // Flip the boolean
-        
-        // Dynamically update the calendar API without reloading the page
-        calendar.setOption('firstDay', weekStartsMonday ? 1 : 0);
-        
-        // Update the button text to show the current active state
-        toggleBtn.textContent = 'WEEK START: ' + (weekStartsMonday ? 'MONDAY' : 'SUNDAY');
-        
-        // Brief visual flash to mimic terminal interaction
-        toggleBtn.style.backgroundColor = 'var(--phosphor)';
-        toggleBtn.style.color = 'var(--void)';
-        setTimeout(() => {
-          toggleBtn.style.backgroundColor = 'rgba(0,0,0,0.2)';
-          toggleBtn.style.color = 'var(--phosphor)';
-        }, 150);
-      });
-      
-      // Close Modal Logic (X button)
+      // --- MODAL CLOSE LOGIC ---
       document.getElementById('modal-close').addEventListener('click', function() {
         document.getElementById('event-modal').style.display = 'none';
       });
 
-      // Close Modal Logic (Clicking the dark background)
       document.getElementById('event-modal').addEventListener('click', function(e) {
         if (e.target === this) {
           this.style.display = 'none';
         }
       });
+
+      // --- WEEK START TOGGLE LOGIC ---
+      var weekStartsMonday = false;
+      var toggleBtn = document.getElementById('week-start-toggle');
+      
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+          weekStartsMonday = !weekStartsMonday;
+          calendar.setOption('firstDay', weekStartsMonday ? 1 : 0);
+          toggleBtn.textContent = 'WEEK START: ' + (weekStartsMonday ? 'MONDAY' : 'SUNDAY');
+          
+          toggleBtn.style.backgroundColor = 'var(--phosphor)';
+          toggleBtn.style.color = 'var(--void)';
+          setTimeout(() => {
+            toggleBtn.style.backgroundColor = 'rgba(0,0,0,0.2)';
+            toggleBtn.style.color = 'var(--phosphor)';
+          }, 150);
+        });
+      }
     });
   </script>
 

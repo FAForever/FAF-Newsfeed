@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FAF // NEWSFEED — DATABANK ARCHIVE</title>
 
-  <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="assets/css/core.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/cards.css">
+  <script src="assets/js/engine.js"></script>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -35,121 +38,81 @@
 
     <div class="section-label">DECRYPTED LOGS</div>
 
+    <!-- NEW: PAGINATION CONTROLS -->
+    <div id="pagination-controls" class="pagination"></div>
+
     <div class="archive-grid" id="archive-feed">
       <div style="color: var(--phosphor-dim); font-family: 'Share Tech Mono', monospace; text-align: center; padding: 40px 0; letter-spacing: 0.1em;">
         ACCESSING QUANTUM STORAGE — RETRIEVING LOGS...
       </div>
     </div>
 
-    <!-- NEW: PAGINATION CONTROLS -->
-    <div id="pagination-controls" class="pagination"></div>
 
   </div>
 
-  <script>
-    // ===== 1. SECTOR CLOCK ENGINE =====
-    function updateClock(){
-      var el = document.getElementById('clock');
-      if(!el) return;
-      const now = new Date();
-      const utcTime = now.toUTCString().split(' ')[4];
-      const localHours = String(now.getHours()).padStart(2, '0');
-      const localMinutes = String(now.getMinutes()).padStart(2, '0');
-      const localSeconds = String(now.getSeconds()).padStart(2, '0');
-      el.innerHTML = 'SECTOR TIME — ' + utcTime + ' UTC &nbsp;//&nbsp; LOCAL — ' + localHours + ':' + localMinutes + ':' + localSeconds;
-    }
-    updateClock();
-    setInterval(updateClock, 1000);
-
-    function decodeHtml(html) {
-      var txt = document.createElement("textarea");
-      txt.innerHTML = html;
-      return txt.value.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
-    }
-
-    // ===== 2. ARCHIVE FEED FETCH ENGINE (PAGINATED & 2-COLUMN) =====
+<script>
     var allArchivedPosts = [];
     var currentPage = 1;
-    var postsPerPage = 20;
+    var postsPerPage = 10;
 
-    function fetchArchiveFeed() {
+    function initArchive() {
       var feedContainer = document.getElementById('archive-feed');
       if (!feedContainer) return;
 
-      // Added 'excerpt' to the _fields parameter
-      var ARCHIVE_API = "https://direct.faforever.com/wp-json/wp/v2/posts/?per_page=100&_fields=title,excerpt,newshub_externalLinkUrl,link,newshub_sortIndex,date,categories,slug&categories=283";
+      var ARCHIVE_API = "https://direct.faforever.com/wp-json/wp/v2/posts/?per_page=100&orderby=date&order=desc&_fields=title,excerpt,newshub_externalLinkUrl,link,newshub_sortIndex,date,categories,slug&categories=283";
+      var firstLoadComplete = false;
 
-      fetch(ARCHIVE_API)
-        .then(function(response) {
-          if (!response.ok) throw new Error("Databank Offline");
-          return response.json();
-        })
-        .then(function(posts) {
-          // Sort Newest to Oldest by date
-          posts.sort(function(a, b) {
-            return new Date(b.date) - new Date(a.date);
-          });
-
-          // Filter out exclusion categories
+      // Isolated deep archive load signature key
+      fetchFAFData(ARCHIVE_API, "deep_archive_cache", 
+        function(posts) {
+          posts.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
+          
           var filteredPosts = posts.filter(function(post) {
             return !post.categories || post.categories[1] !== 284;
           });
-
-          // Slice off the first 6 active front-page posts
+          
           allArchivedPosts = filteredPosts.slice(6);
-
+          
           if(allArchivedPosts.length === 0) {
-            feedContainer.innerHTML = '<div style="color: var(--amber); font-family: monospace; text-align: center; grid-column: 1 / -1;">NO ARCHIVED LOGS FOUND.</div>';
+            feedContainer.innerHTML = '<div style="color: var(--amber); text-align: center; grid-column: 1 / -1;">NO ARCHIVED LOGS FOUND.</div>';
             return;
           }
-
-          renderPage(1);
-        })
-        .catch(function(err) {
-          console.error("Archive Failure:", err);
+          
+          if (!firstLoadComplete) {
+            renderPage(1);
+            firstLoadComplete = true;
+          } else {
+            renderPage(currentPage);
+          }
+        },
+        function(err) {
           feedContainer.innerHTML = `<div style="color: var(--red); text-align: center; padding: 40px; grid-column: 1 / -1;">DATABANK ACCESS DENIED // FIREWALL ACTIVE</div>`;
-        });
+        }
+      );
     }
 
     function renderPage(pageNumber) {
       currentPage = pageNumber;
       var feedContainer = document.getElementById('archive-feed');
       var rowsHtml = '';
-
+      
       var startIndex = (currentPage - 1) * postsPerPage;
       var endIndex = startIndex + postsPerPage;
       var postsToRender = allArchivedPosts.slice(startIndex, endIndex);
 
-    postsToRender.forEach(function(post) {
+      postsToRender.forEach(function(post) {
         var cleanTitle = decodeHtml(post.title.rendered);
-        var finalDestinationUrl = post.newshub_externalLinkUrl || post.link || '#';
-
-        // Clean and trim the excerpt to exactly 300 characters
+        var finalUrl = post.newshub_externalLinkUrl || post.link || '#';
+        var faction = getFactionData(cleanTitle, post.slug);
+        var formattedDate = formatTacticalDate(post.date);
+        
         var cleanExcerpt = post.excerpt && post.excerpt.rendered ? decodeHtml(post.excerpt.rendered) : 'No additional intel provided.';
-        var excerptLimit = 300; 
-        if (cleanExcerpt.length > excerptLimit) {
-          cleanExcerpt = cleanExcerpt.substring(0, excerptLimit - 3) + '...'; 
+        if (cleanExcerpt.length > 300) {
+          cleanExcerpt = cleanExcerpt.substring(0, 297) + '...'; 
         }
 
-        // Faction targeting and class assignment for CSS (Tag logic removed)
-        var factionClass = 'uef';
-        var matchTarget = (cleanTitle + ' ' + (post.slug || '')).toLowerCase();
-
-        if (matchTarget.indexOf('cybran') !== -1) { factionClass = 'cybran'; } 
-        else if (matchTarget.indexOf('aeon') !== -1 || matchTarget.indexOf('tournament') !== -1) { factionClass = 'aeon'; } 
-        else if (matchTarget.indexOf('seraphim') !== -1) { factionClass = 'seraphim'; }
-
-        // Date Formatting
-        var postDate = new Date(post.date);
-        var day = String(postDate.getDate()).padStart(2, '0');
-        var months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-        var month = months[postDate.getMonth()];
-        var year = postDate.getFullYear();
-        var formattedDate = day + ' ' + month + ' ' + year;
-
-        // Render as a standard Tactical Card without the tag element
         rowsHtml += `
-          <a href="${finalDestinationUrl}" target="_blank" rel="noopener noreferrer" class="card ${factionClass}" style="text-decoration: none; display: block;">
+          <a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="card ${faction.class}" style="text-decoration: none; display: block;">
             <div class="corner tl"></div><div class="corner br"></div>
             <div class="meta">ARCHIVED: ${formattedDate}</div>
             <h3>${cleanTitle}</h3>
@@ -161,21 +124,22 @@
 
       feedContainer.innerHTML = rowsHtml;
       renderPaginationControls();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function renderPaginationControls() {
       var controlsContainer = document.getElementById('pagination-controls');
+      if (!controlsContainer) return;
+      
       var totalPages = Math.ceil(allArchivedPosts.length / postsPerPage);
-
       if (totalPages <= 1) {
         controlsContainer.innerHTML = '';
         return;
       }
 
       var html = '';
+      
       if (currentPage > 1) {
-        html += `<button onclick="renderPage(${currentPage - 1})">← PREV</button>`;
+        html += `<button onclick="renderPage(${currentPage - 1}); window.scrollTo({top:0, behavior:'smooth'});">← PREV</button>`;
       } else {
         html += `<button disabled style="opacity: 0.3; cursor: not-allowed;">← PREV</button>`;
       }
@@ -183,7 +147,7 @@
       html += `<span class="page-info">PAGE ${currentPage} OF ${totalPages}</span>`;
 
       if (currentPage < totalPages) {
-        html += `<button onclick="renderPage(${currentPage + 1})">NEXT →</button>`;
+        html += `<button onclick="renderPage(${currentPage + 1}); window.scrollTo({top:0, behavior:'smooth'});">NEXT →</button>`;
       } else {
         html += `<button disabled style="opacity: 0.3; cursor: not-allowed;">NEXT →</button>`;
       }
@@ -191,9 +155,7 @@
       controlsContainer.innerHTML = html;
     }
 
-    window.onload = function() {
-      fetchArchiveFeed();
-    };
+    window.onload = initArchive;
   </script>
 </body>
 </html>

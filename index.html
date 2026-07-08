@@ -6,7 +6,10 @@
 
   <title>FAF // NEWSFEED — TACTICAL FEED</title>
 
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="assets/css/core.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/cards.css">
+  <script src="assets/js/engine.js"></script>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -86,121 +89,54 @@
 
   </div>
 
-  <script>
-// ===== 1. SECTOR DUAL-CLOCK ENGINE (UTC / LOCAL) =====
-    function updateClock(){
-      var el = document.getElementById('clock');
-      if(!el) return;
-      
-      const now = new Date();
-      
-      // 1. Calculate UTC Sector Target
-      const utcTime = now.toUTCString().split(' ')[4];
-      
-      // 2. Calculate Local Machine Tracking Metrics
-      const localHours = String(now.getHours()).padStart(2, '0');
-      const localMinutes = String(now.getMinutes()).padStart(2, '0');
-      const localSeconds = String(now.getSeconds()).padStart(2, '0');
-      const localTime = localHours + ':' + localMinutes + ':' + localSeconds;
-      
-      // 3. Render clean HUD readout string
-      el.innerHTML = 'SECTOR TIME — ' + utcTime + ' UTC &nbsp;//&nbsp; LOCAL — ' + localTime;
-    }
-    updateClock();
-    setInterval(updateClock, 1000);
-
-    // ===== 2. WP HTML CHARACTER SANITIZATION HELPER =====
-    function decodeHtml(html) {
-      var txt = document.createElement("textarea");
-      txt.innerHTML = html;
-      return txt.value
-        .replace(/<[^>]*>/g, '') 
-        .replace(/\s+/g, ' ')   
-        .trim();
-    }
-
-    // ===== 3. LIVE DIRECT WP_API TRANSMISSION INTERCHANGE =====
-    function fetchFafNewsFeed() {
-      var feedContainer = document.getElementById('news-feed');
+<script>
+    function initNewsfeed() {
+      var feedContainer = document.getElementById('news-feed'); 
       if (!feedContainer) return;
 
-      var NEWSHUB_API = "https://direct.faforever.com/wp-json/wp/v2/posts/?per_page=6&_embed&_fields=_links.author,_links.wp:featuredmedia,_embedded,title,newshub_externalLinkUrl,newshub_sortIndex,content.rendered,date,categories&categories=283";
+      var API_URL = "https://direct.faforever.com/wp-json/wp/v2/posts/?per_page=15&_embed&_fields=_links.author,_links.wp:featuredmedia,_embedded,title,excerpt,newshub_externalLinkUrl,link,newshub_sortIndex,date,categories,slug&categories=283";
 
-      fetch(NEWSHUB_API)
-        .then(function(response) {
-          if (!response.ok) throw new Error("Comms Link Interrupted");
-          return response.json();
-        })
-        .then(function(posts) {
-          var cardsHtml = '';
-
-          if (!posts || posts.length === 0) {
-            throw new Error("No transmissions found.");
-          }
-
-          posts.sort(function(a, b) {
-            return (b.newshub_sortIndex || 0) - (a.newshub_sortIndex || 0);
-          });
-
+      // Isolated profile call using key segmentation
+      fetchFAFData(API_URL, "front_page_cache",
+        function(posts) {
+          posts.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
+          
           var filteredPosts = posts.filter(function(post) {
             return !post.categories || post.categories[1] !== 284;
           });
+          
+          var topPosts = filteredPosts.slice(0, 6);
+          var html = '';
 
-          filteredPosts.forEach(function(post, index) {
+          topPosts.forEach(function(post, index) {
+            var isFeatured = (index === 0); 
             var cleanTitle = decodeHtml(post.title.rendered);
-            var finalDestinationUrl = post.newshub_externalLinkUrl || post.link || '#';
+            var finalUrl = post.newshub_externalLinkUrl || post.link || '#';
+            var faction = getFactionData(cleanTitle, post.slug);
+            var formattedDate = formatTacticalDate(post.date);
+            
+            var rawContent = post.excerpt && post.excerpt.rendered ? post.excerpt.rendered : (post.content ? post.content.rendered : '');
+            var cleanExcerpt = decodeHtml(rawContent) || 'No additional intel provided.';
+            if (cleanExcerpt.length > 300) {
+              cleanExcerpt = cleanExcerpt.substring(0, 297) + '...';
+            }
 
             var thumbnailUrl = 'https://picsum.photos/400/220'; 
             if (post._embedded && post._embedded['wp:featuredmedia'] && post._embedded['wp:featuredmedia'][0]) {
               thumbnailUrl = post._embedded['wp:featuredmedia'][0].source_url || thumbnailUrl;
             }
 
-            var factionClass = 'uef';
-            var tagLabel = 'FAF // NEWS';
-            var matchTarget = (cleanTitle + ' ' + (post.slug || '')).toLowerCase();
-
-            if (matchTarget.indexOf('cybran') !== -1) {
-              factionClass = 'cybran';
-              tagLabel = 'CYBRAN // INTEL';
-            } else if (matchTarget.indexOf('aeon') !== -1 || matchTarget.indexOf('tournament') !== -1) {
-              factionClass = 'aeon';
-              tagLabel = 'AEON // PROTOCOL';
-            } else if (matchTarget.indexOf('seraphim') !== -1) {
-              factionClass = 'seraphim';
-              tagLabel = 'SERAPHIM // SIGNAL';
-            } else if (matchTarget.indexOf('patch') !== -1 || matchTarget.indexOf('balance') !== -1) {
-              factionClass = 'uef';
-              tagLabel = 'UEF // GRID';
-            }
-
-            var rawContent = post.content ? post.content.rendered : '';
-            var cleanExcerpt = decodeHtml(rawContent);
-
-            var isFeatured = (index === 0);
-            var excerptLimit = 300; // Unified 300-character limit across the board
-            if (cleanExcerpt.length > excerptLimit) {
-              // Trims exactly at 297 and adds the 3 dots to hit exactly 300
-              cleanExcerpt = cleanExcerpt.substring(0, excerptLimit - 3) + '...'; 
-            }
-
-            var postDate = new Date(post.date);
-            var day = String(postDate.getDate()).padStart(2, '0');
-            var months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-            var month = months[postDate.getMonth()];
-            var year = postDate.getFullYear();
-            var formattedDate = day + '.' + month + '.' + year;
-
             if (isFeatured) {
-              cardsHtml += `
-              <article class="card ${factionClass} featured">
+              html += `
+              <article class="card ${faction.class} featured">
                 <div class="corner tl"></div><div class="corner br"></div>
                 <div>
                   <span class="tag latest">● LATEST</span>
-                  <span class="tag">${tagLabel}</span>
+                  <span class="tag">${faction.label}</span>
                   <div class="meta" style="margin-top:12px;">${formattedDate} — SECURE LINK</div>
                   <h3>${cleanTitle}</h3>
                   <p>${cleanExcerpt}</p>
-                  <a class="readmore" href="${finalDestinationUrl}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
+                  <a class="readmore" href="${finalUrl}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
                 </div>
                 <div class="visual">
                   <img src="${thumbnailUrl}" alt="${cleanTitle}" loading="lazy">
@@ -208,33 +144,33 @@
                 </div>
               </article>`;
             } else {
-              cardsHtml += `
-              <article class="card ${factionClass}">
+              html += `
+              <article class="card ${faction.class}">
                 <div class="corner tl"></div><div class="corner br"></div>
                 <div class="card-thumb">
                   <img src="${thumbnailUrl}" alt="${cleanTitle}" loading="lazy">
                 </div>
-                <span class="tag">${tagLabel}</span>
+                <span class="tag">${faction.label}</span>
                 <div class="meta">${formattedDate} — SECURE LINK</div>
                 <h3>${cleanTitle}</h3>
                 <p>${cleanExcerpt}</p>
-                <a class="readmore" href="${finalDestinationUrl}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
+                <a class="readmore" href="${finalUrl}" target="_blank" rel="noopener noreferrer">READ FULL REPORT</a>
               </article>`;
             }
           });
 
-          feedContainer.innerHTML = cardsHtml;
-        })
-        .catch(function(err) {
-          console.error("Transmission Failure:", err);
+          feedContainer.innerHTML = html;
+          setTimeout(optimizeVisibleAnimations, 100);
+        },
+        function(err) {
           feedContainer.innerHTML = `
             <div style="grid-column: 1/-1; color: var(--red); font-family: 'Share Tech Mono', monospace; text-align: center; padding: 40px 0; letter-spacing: 0.1em;">
               LINK DROPPED — TERMINAL FIREWALL ACCESS INTERCEPTED
             </div>`;
-        });
+        }
+      );
     }
 
-    // ===== 4. PERFORMANCE ENGINE: DISABLE OFF-SCREEN ANIMATIONS =====
     function optimizeVisibleAnimations() {
       const animatedElements = document.querySelectorAll('.ticker span, .dot, .cursor, .card');
       const windowHeight = window.innerHeight;
@@ -242,7 +178,6 @@
       animatedElements.forEach(function(el) {
         const rect = el.getBoundingClientRect();
         const isOffScreen = (rect.bottom < 0 || rect.top > windowHeight);
-        
         if (isOffScreen) {
           el.classList.add('freeze-frame');
         } else {
@@ -261,10 +196,8 @@
       }
     });
 
-    // Execute everything on load sequence hooks
     window.onload = function() {
-      fetchFafNewsFeed();
-      setTimeout(optimizeVisibleAnimations, 800);
+      initNewsfeed();
     };
   </script>
 

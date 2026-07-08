@@ -1,0 +1,67 @@
+/* ===== 1. CORE ENGINE FRAMEWORK & VARIABLES ===== */
+:root {
+  --void: #0a0f0d;
+  --panel: #131c18;
+  --panel-2: #1a2620;
+  --grid-line: #25382e;
+  --phosphor: #4effa2;
+  --phosphor-dim: #518c68;
+  --amber: #ffb830;
+  --red: #ff6666;
+  --uef: #5caeff;           
+  --cybran: #ff5252;        
+  --aeon: #ffd042;          
+  --seraphim: #4ff0cf;      
+  --text: #f0fbf5;
+  --text-dim: #94b3a1;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-size: 14px;
+  background: var(--void);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 38px 38px;
+  opacity: 0.4; 
+  pointer-events: none;
+  z-index: 0;
+}
+
+.frame {
+  position: relative;
+  z-index: 1;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 22px 20px 80px;
+}
+
+/* ===== 2. CUSTOM SCROLLBARS ===== */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--void);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--grid-line);
+  border: 1px solid var(--phosphor-dim);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--phosphor-dim);
+}

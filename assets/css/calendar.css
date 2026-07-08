@@ -1,0 +1,85 @@
+/* ===== 1. FULLCALENDAR TACTICAL HUD MODIFICATIONS ===== */
+.fc-direction-ltr .fc-daygrid-event .fc-event-time,
+.fc-direction-ltr .fc-daygrid-event .fc-event-title,
+.fc-event-main {
+  white-space: normal !important; 
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-wrap: break-word !important;
+}
+
+.fc-h-event {
+  height: auto !important;
+  padding-bottom: 4px !important;
+}
+
+.fc {
+  font-family: 'Share Tech Mono', monospace;
+  background: var(--panel);
+  border: 1px solid var(--grid-line);
+  padding: 20px;
+  color: var(--text);
+}
+
+.fc .fc-toolbar-title { font-size: 20px; letter-spacing: 0.1em; color: var(--phosphor); }
+.fc .fc-button-primary { background-color: var(--void); border-color: var(--grid-line); color: var(--phosphor-dim); font-family: 'Share Tech Mono', monospace; text-transform: uppercase; letter-spacing: 0.05em; }
+.fc .fc-button-primary:hover, .fc .fc-button-primary:focus { background-color: var(--phosphor); color: var(--void) !important; border-color: var(--phosphor); box-shadow: 0 0 10px rgba(78,255,162,0.3); }
+.fc .fc-button-active { background-color: var(--panel-2) !important; border-color: var(--phosphor) !important; color: var(--phosphor) !important; }
+
+.fc th { background: var(--panel-2); color: var(--amber); border-color: var(--grid-line) !important; padding: 8px 0 !important; letter-spacing: 0.1em; }
+.fc td { border-color: var(--grid-line) !important; }
+.fc .fc-day-other { background: rgba(0, 0, 0, 0.2); }
+.fc .fc-day-today { background: rgba(78, 255, 162, 0.04) !important; }
+
+.fc-v-event, .fc-h-event { background-color: var(--panel-2); border: 1px solid var(--phosphor-dim); padding: 2px 4px; }
+.fc-event-title, .fc-event-time { color: var(--phosphor); font-size: 11px; }
+.fc-event:hover { cursor: pointer; border-color: var(--amber); }
+
+/* ===== 2. TACTICAL OVERLAY EVENT FILTERS ===== */
+.fc-event.ev-patch { background-color: rgba(92, 174, 255, 0.15) !important; border-left: 3px solid var(--uef) !important; border-color: rgba(92, 174, 255, 0.3) !important; }
+.fc-event.ev-patch .fc-event-title { color: var(--uef) !important; }
+
+.fc-event.ev-tournament { background-color: rgba(255, 82, 82, 0.15) !important; border-left: 3px solid var(--cybran) !important; border-color: rgba(255, 82, 82, 0.3) !important; }
+.fc-event.ev-tournament .fc-event-title { color: var(--cybran) !important; font-weight: 600; }
+
+.fc-event.ev-gamenight { background-color: rgba(78, 255, 162, 0.1) !important; border-left: 3px solid var(--phosphor) !important; border-color: rgba(78, 255, 162, 0.2) !important; }
+.fc-event.ev-gamenight .fc-event-title { color: var(--phosphor) !important; }
+
+.fc-event.ev-meeting { background-color: rgba(79, 240, 207, 0.12) !important; border-left: 3px solid var(--seraphim) !important; border-color: rgba(79, 240, 207, 0.2) !important; }
+.fc-event.ev-meeting .fc-event-title { color: var(--seraphim) !important; }
+
+.fc-event.ev-sale { background-color: rgba(255, 184, 48, 0.12) !important; border-left: 3px solid var(--amber) !important; border-color: rgba(255, 184, 48, 0.2) !important; }
+.fc-event.ev-sale .fc-event-title { color: var(--amber) !important; }
+
+/* ===== 3. OVERLAY BOX MODEL INFRASTRUCTURE ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 13, 0.85);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-box {
+  background: var(--panel-2);
+  border: 1px solid var(--phosphor-dim);
+  width: 90%;
+  max-width: 480px;
+  padding: 24px;
+  position: relative;
+  box-shadow: 0 0 0 1px var(--phosphor), 0 8px 32px -8px rgba(0,0,0,0.8);
+}
+.modal-box .corner { position: absolute; width: 14px; height: 14px; border-color: var(--phosphor); }
+.modal-box .corner.tl { top: -1px; left: -1px; border-top: 2px solid; border-left: 2px solid; }
+.modal-box .corner.br { bottom: -1px; right: -1px; border-bottom: 2px solid; border-right: 2px solid; }
+
+.modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.modal-header h3 { font-family: 'Share Tech Mono', monospace; color: var(--phosphor); margin: 0; font-size: 20px; letter-spacing: 0.05em; }
+.close-btn { background: transparent; border: none; color: var(--text-dim); font-size: 28px; cursor: pointer; line-height: 0.8; padding: 0; transition: color 0.2s; }
+.close-btn:hover { color: var(--red); }
+
+.modal-body .meta { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--amber); margin-bottom: 16px; letter-spacing: 0.1em; }
+.modal-body p { font-size: 14px; color: var(--text); line-height: 1.6; margin: 0 0 20px; }
+.modal-body .readmore { display: inline-block; font-family: 'Share Tech Mono', monospace; font-size: 12px; letter-spacing: 0.1em; color: var(--uef); text-decoration: none; border: 1px solid var(--uef); padding: 8px 16px; background: rgba(0,0,0,0.2); transition: all 0.2s; }
+.modal-body .readmore:hover { background: var(--uef); color: var(--void); }
