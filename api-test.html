@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAF API // CORES DIAGNOSTIC TERMINAL</title>
+  <style>
+    body {
+      background: #0a0f0d;
+      color: #f0fbf5;
+      font-family: monospace;
+      padding: 20px;
+      line-height: 1.4;
+    }
+    .terminal {
+      background: #131c18;
+      border: 1px solid #25382e;
+      padding: 20px;
+      margin-top: 20px;
+      max-height: 500px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      font-size: 13px;
+    }
+    button {
+      background: #1a2620;
+      border: 1px solid #4effa2;
+      color: #4effa2;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+    }
+    button:hover {
+      background: #4effa2;
+      color: #0a0f0d;
+      box-shadow: 0 0 10px rgba(78, 255, 162, 0.4);
+    }
+    .status-pass { color: #4effa2; }
+    .status-fail { color: #ff6666; }
+    .status-info { color: #ffb830; }
+  </style>
+</head>
+<body>
+
+  <h1>// FAF API TELEMETRY TEST CONSOLE</h1>
+  <p>Executes validation check against direct endpoints and backup proxy arrays.</p>
+  
+  <button onclick="runDiagnostics()">RUN SYSTEM DIAGNOSTICS</button>
+
+  <div class="terminal" id="console-log">> READY FOR OPERATIONAL CHECK...</div>
+
+  <script>
+    const logContainer = document.getElementById('console-log');
+    const TARGET_URL = "https://api.faforever.com/data/matchmakerQueue?include=mapPool,mapPool.mapPoolAssignments,mapPool.mapPoolAssignments.mapVersion,mapPool.mapPoolAssignments.mapVersion.map&fields[matchmakerQueue]=technicalName,enabled,mapPool";
+
+    function printLog(message, type = 'info') {
+      const timestamp = new Date().toISOString().slice(11, 19);
+      let colorClass = 'status-info';
+      if (type === 'pass') colorClass = 'status-pass';
+      if (type === 'fail') colorClass = 'status-fail';
+      
+      logContainer.innerHTML += `\n[${timestamp}] <span class="${colorClass}">${message}</span>`;
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+
+    async function testEndpoint(url, label) {
+      printLog(`Testing Link Node: [ ${label} ]...`);
+      try {
+        const start = Date.now();
+        const response = await fetch(url);
+        const duration = Date.now() - start;
+        
+        if (!response.ok) {
+          throw new Error(`HTTP Status Error: ${response.status}`);
+        }
+        
+        const rawData = await response.json();
+        // Unpack payload data structure if wrapped by AllOrigins proxy
+        const parsedData = rawData.contents ? JSON.parse(rawData.contents) : rawData;
+
+        if (parsedData && parsedData.data && parsedData.data.length > 0) {
+          printLog(`>> SUCCESS: Node [ ${label} ] online. Ping: ${duration}ms. Found ${parsedData.data.length} queue streams.`, 'pass');
+          return true;
+        } else {
+          throw new Error("Payload missing standard JSON:API array properties.");
+        }
+      } catch (err) {
+        printLog(`>> FAULT: Node [ ${label} ] dropped link. Reason: ${err.message}`, 'fail');
+        return false;
+      }
+    }
+
+    async function runDiagnostics() {
+      logContainer.innerHTML = "> INITIATING CONSOLE TELEMETRY CORES...";
+      
+      // Test Line 1: Direct Pipeline Connection
+      const directSuccess = await testEndpoint(TARGET_URL, "DIRECT_FAF_API");
+      
+      if (directSuccess) {
+        printLog("\n// DIAGNOSTICS COMPLETE: Primary pipeline clear. Your client network parameters are optimal.", "pass");
+        return;
+      }
+
+      printLog("\nPrimary link dropped. Initiating auxiliary route tests...", "info");
+
+      // Test Line 2: AllOrigins Proxy Link
+      const proxy1Url = "https://api.allorigins.win/get?url=" + encodeURIComponent(TARGET_URL);
+      const proxy1Success = await testEndpoint(proxy1Url, "ALLORIGINS_PROXY");
+
+      // Test Line 3: CorsProxy.io Link
+      const proxy2Url = "https://corsproxy.io/?" + encodeURIComponent(TARGET_URL);
+      const proxy2Success = await testEndpoint(proxy2Url, "CORSPROXY_IO");
+
+      if (proxy1Success || proxy2Success) {
+        printLog("\n// DIAGNOSTICS COMPLETE: Proxy auxiliary lines are functional. Browser CORS or Local File System rules are restricting direct calls.", "info");
+      } else {
+        printLog("\n// CRITICAL FAULT: All routing links closed. Verify internet connectivity or host machine endpoint permissions.", "fail");
+      }
+    }
+  </script>
+</body>
+</html>
