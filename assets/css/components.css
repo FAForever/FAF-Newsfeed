@@ -4,7 +4,7 @@
   justify-content: space-between;
   align-items: center;
   font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
+  font-size: 12px; /* Upscaled 10% from 11px */
   letter-spacing: 0.12em;
   color: var(--phosphor-dim);
   border: 1px solid var(--grid-line);
@@ -40,7 +40,7 @@
 .hero .corner.tl { top: 8px; left: 8px; border-top: 2px solid; border-left: 2px solid; }
 .hero .corner.tr { top: 8px; right: 8px; border-top: 2px solid; border-right: 2px solid; }
 .hero .corner.bl { bottom: 8px; left: 8px; border-bottom: 2px solid; border-left: 2px solid; }
-.hero .corner.br { bottom: 8px; right: 8px; border-bottom: 2px solid; border-right: 2px solid; } /* Fixed orientation */
+.hero .corner.br { bottom: 8px; right: 8px; border-bottom: 2px solid; border-right: 2px solid; }
 
 .radar {
   position: absolute;
@@ -70,13 +70,13 @@
 .eyebrow {
   font-family: 'Share Tech Mono', monospace;
   color: var(--amber);
-  font-size: 12px;
+  font-size: 13px; /* Upscaled 10% from 12px */
   letter-spacing: 0.3em;
   margin-bottom: 10px;
 }
 .hero h1 {
   font-family: 'Share Tech Mono', monospace;
-  font-size: clamp(28px, 5vw, 46px);
+  font-size: clamp(31px, 5.5vw, 50.5px); /* Dynamic boundaries boundaries upscaled 10% */
   margin: 0 0 14px;
   color: var(--phosphor);
   letter-spacing: 0.03em;
@@ -93,7 +93,7 @@
 .hero p {
   max-width: 560px;
   color: var(--text-dim);
-  font-size: 14px;
+  font-size: 15.5px; /* Upscaled 10% from 14px */
   line-height: 1.6;
   margin: 0;
 }
@@ -106,7 +106,7 @@
 }
 .quicklinks a {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
+  font-size: 12px; /* Upscaled 10% from 11px */
   letter-spacing: 0.1em;
   color: var(--phosphor);
   text-decoration: none;
@@ -124,7 +124,7 @@
 /* ===== 3. COMPONENT TICKERS & FOOTERS ===== */
 .section-label {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 12px;
+  font-size: 13px; /* Upscaled 10% from 12px */
   letter-spacing: 0.25em;
   color: var(--text-dim);
   display: flex;
@@ -150,7 +150,7 @@
 }
 .ticker-label {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
+  font-size: 12px; /* Upscaled 10% from 11px */
   color: var(--red);
   letter-spacing: 0.15em;
   white-space: nowrap;
@@ -161,7 +161,7 @@
   animation: pulse 1.4s infinite;
 }
 .ticker {
-  font-size: 12.5px;
+  font-size: 14px; /* Upscaled 10% from 12.5px */
   color: var(--text-dim);
   overflow: hidden;
   white-space: nowrap;
@@ -187,14 +187,14 @@
 .footnav > div { flex: 1 1 180px; }
 .footnav h4 {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
+  font-size: 12px; /* Upscaled 10% from 11px */
   letter-spacing: 0.2em;
   color: var(--amber);
   margin: 0 0 12px;
 }
 .footnav a {
   display: block;
-  font-size: 12.5px;
+  font-size: 14px; /* Upscaled 10% from 12.5px */
   color: var(--text-dim);
   text-decoration: none;
   padding: 5px 0;
@@ -228,7 +228,7 @@
   right: 20px;
   z-index: 9999;
   font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
+  font-size: 12px; /* Upscaled 10% from 11px */
   font-weight: 600;
   letter-spacing: 0.15em;
   color: var(--phosphor);
@@ -262,7 +262,6 @@
   transform: translateY(-2px);
 }
 
-/* Hide on ultra-small viewport heights if it blocks layout pagination */
 @media (max-height: 400px) {
   .comms-feedback-btn {
     display: none;

@@ -20,7 +20,7 @@
 
 body {
   margin: 0;
-  font-size: 14px;
+  font-size: 15.5px; /* Upscaled 10% from 14px */
   background: var(--void);
   color: var(--text);
   font-family: 'Rajdhani', sans-serif;
@@ -40,6 +40,15 @@ body::before {
   opacity: 0.4; 
   pointer-events: none;
   z-index: 0;
+}
+
+body, p, .hero p {
+  font-size: 16px !important; /* Upscaled 10% from 14.5px */
+  line-height: 1.5;
+}
+
+.hero p {
+  font-size: 18px !important; /* Upscaled 10% from 16.5px */
 }
 
 .frame {

@@ -36,7 +36,7 @@
 
 .card .tag {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 10px;
+  font-size: 11px; /* Upscaled 10% from 10px */
   letter-spacing: 0.15em;
   color: var(--accent);
   border: 1px solid var(--accent);
@@ -46,27 +46,27 @@
   background: rgba(0,0,0,0.2);
 }
 .card .meta {
-  font-size: 10px;
+  font-size: 11px; /* Upscaled 10% from 10px */
   color: var(--text-dim);
   letter-spacing: 0.08em;
   margin-bottom: 8px;
 }
 .card h3 {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 16px;
+  font-size: 17.5px; /* Upscaled 10% from 16px */
   color: var(--text);
   margin: 0 0 10px;
   line-height: 1.3;
 }
 .card p {
-  font-size: 14.5px; /* Upgraded text optimization size */
+  font-size: 16px; /* Upscaled 10% from 14.5px */
   color: var(--text-dim);
   line-height: 1.6;
   margin: 0 0 14px;
 }
 .card .readmore {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
+  font-size: 12px; /* Upscaled 10% from 11px */
   letter-spacing: 0.1em;
   color: var(--accent);
   text-decoration: none;
@@ -91,9 +91,9 @@
   margin-right: 8px;
   animation: pulse 2s infinite;
 }
-.card.featured h3 { font-size: clamp(20px, 2.4vw, 30px); line-height: 1.25; margin: 0 0 14px; }
-.card.featured p { font-size: 15.5px; line-height: 1.7; }
-.card.featured .meta { font-size: 11px; }
+.card.featured h3 { font-size: clamp(22px, 2.64vw, 33px); line-height: 1.25; margin: 0 0 14px; } /* Dynamic boundaries upscaled 10% */
+.card.featured p { font-size: 17px; line-height: 1.7; } /* Upscaled 10% from 15.5px */
+.card.featured .meta { font-size: 12px; } /* Upscaled 10% from 11px */
 .card.featured > div:first-child { flex: 1.1 1 320px; }
 
 /* ===== 3. IMAGE MEDIA CONTAINER SYSTEM ===== */
@@ -116,7 +116,7 @@
   background: linear-gradient(rgba(78, 255, 162, 0.08), transparent), repeating-linear-gradient(0deg, rgba(0,0,0,0.2) 0px, rgba(0,0,0,0.2) 1px, transparent 2px, transparent 4px);
   z-index: 1;
 }
-.card.featured .visual .coord { position: relative; z-index: 3; font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--accent); letter-spacing: 0.1em; }
+.card.featured .visual .coord { position: relative; z-index: 3; font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--accent); letter-spacing: 0.1em; } /* Upscaled 10% from 10px */
 
 .card-thumb {
   position: relative;
@@ -167,7 +167,7 @@
   padding: 10px 20px;
   cursor: pointer;
   font-family: inherit;
-  font-size: 12px;
+  font-size: 13px; /* Upscaled 10% from 12px */
   letter-spacing: 0.1em;
   transition: all 0.2s;
   min-width: 100px;
@@ -177,4 +177,4 @@
   color: var(--void);
   box-shadow: 0 0 10px rgba(78,255,162,0.3);
 }
-.pagination .page-info { color: var(--text-dim); font-size: 13px; letter-spacing: 0.15em; }
+.pagination .page-info { color: var(--text-dim); font-size: 14.5px; letter-spacing: 0.15em; } /* Upscaled 10% from 13px */

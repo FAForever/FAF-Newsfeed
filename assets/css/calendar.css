@@ -21,7 +21,7 @@
   color: var(--text);
 }
 
-.fc .fc-toolbar-title { font-size: 20px; letter-spacing: 0.1em; color: var(--phosphor); }
+.fc .fc-toolbar-title { font-size: 22px; letter-spacing: 0.1em; color: var(--phosphor); } /* Upscaled 10% from 20px */
 .fc .fc-button-primary { background-color: var(--void); border-color: var(--grid-line); color: var(--phosphor-dim); font-family: 'Share Tech Mono', monospace; text-transform: uppercase; letter-spacing: 0.05em; }
 .fc .fc-button-primary:hover, .fc .fc-button-primary:focus { background-color: var(--phosphor); color: var(--void) !important; border-color: var(--phosphor); box-shadow: 0 0 10px rgba(78,255,162,0.3); }
 .fc .fc-button-active { background-color: var(--panel-2) !important; border-color: var(--phosphor) !important; color: var(--phosphor) !important; }
@@ -32,7 +32,7 @@
 .fc .fc-day-today { background: rgba(78, 255, 162, 0.04) !important; }
 
 .fc-v-event, .fc-h-event { background-color: var(--panel-2); border: 1px solid var(--phosphor-dim); padding: 2px 4px; }
-.fc-event-title, .fc-event-time { color: var(--phosphor); font-size: 11px; }
+.fc-event-title, .fc-event-time { color: var(--phosphor); font-size: 12px; } /* Upscaled 10% from 11px */
 .fc-event:hover { cursor: pointer; border-color: var(--amber); }
 
 /* ===== 2. TACTICAL OVERLAY EVENT FILTERS ===== */
@@ -75,11 +75,11 @@
 .modal-box .corner.br { bottom: -1px; right: -1px; border-bottom: 2px solid; border-right: 2px solid; }
 
 .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
-.modal-header h3 { font-family: 'Share Tech Mono', monospace; color: var(--phosphor); margin: 0; font-size: 20px; letter-spacing: 0.05em; }
-.close-btn { background: transparent; border: none; color: var(--text-dim); font-size: 28px; cursor: pointer; line-height: 0.8; padding: 0; transition: color 0.2s; }
+.modal-header h3 { font-family: 'Share Tech Mono', monospace; color: var(--phosphor); margin: 0; font-size: 22px; letter-spacing: 0.05em; } /* Upscaled 10% from 20px */
+.close-btn { background: transparent; border: none; color: var(--text-dim); font-size: 31px; cursor: pointer; line-height: 0.8; padding: 0; transition: color 0.2s; } /* Upscaled 10% from 28px */
 .close-btn:hover { color: var(--red); }
 
-.modal-body .meta { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--amber); margin-bottom: 16px; letter-spacing: 0.1em; }
-.modal-body p { font-size: 14px; color: var(--text); line-height: 1.6; margin: 0 0 20px; }
-.modal-body .readmore { display: inline-block; font-family: 'Share Tech Mono', monospace; font-size: 12px; letter-spacing: 0.1em; color: var(--uef); text-decoration: none; border: 1px solid var(--uef); padding: 8px 16px; background: rgba(0,0,0,0.2); transition: all 0.2s; }
+.modal-body .meta { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--amber); margin-bottom: 16px; letter-spacing: 0.1em; } /* Upscaled 10% from 11px */
+.modal-body p { font-size: 15.5px; color: var(--text); line-height: 1.6; margin: 0 0 20px; } /* Upscaled 10% from 14px */
+.modal-body .readmore { display: inline-block; font-family: 'Share Tech Mono', monospace; font-size: 13px; letter-spacing: 0.1em; color: var(--uef); text-decoration: none; border: 1px solid var(--uef); padding: 8px 16px; background: rgba(0,0,0,0.2); transition: all 0.2s; } /* Upscaled 10% from 12px */
 .modal-body .readmore:hover { background: var(--uef); color: var(--void); }
