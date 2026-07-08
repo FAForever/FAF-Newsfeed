@@ -866,3 +866,18 @@ body::before{
   font-size: 13px;
   letter-spacing: 0.15em;
 }
+
+/* ===== ARCHIVE 2-COLUMN GRID ===== */
+.archive-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+/* Mobile responsive collapse */
+@media (max-width: 820px) {
+  .archive-grid {
+    grid-template-columns: 1fr;
+  }
+}

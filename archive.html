@@ -35,7 +35,7 @@
 
     <div class="section-label">DECRYPTED LOGS</div>
 
-    <div class="archive-list" id="archive-feed">
+    <div class="archive-grid" id="archive-feed">
       <div style="color: var(--phosphor-dim); font-family: 'Share Tech Mono', monospace; text-align: center; padding: 40px 0; letter-spacing: 0.1em;">
         ACCESSING QUANTUM STORAGE — RETRIEVING LOGS...
       </div>
@@ -67,7 +67,7 @@
       return txt.value.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
     }
 
-    // ===== 2. ARCHIVE FEED FETCH ENGINE (PAGINATED) =====
+    // ===== 2. ARCHIVE FEED FETCH ENGINE (PAGINATED & 2-COLUMN) =====
     var allArchivedPosts = [];
     var currentPage = 1;
     var postsPerPage = 20;
@@ -76,8 +76,8 @@
       var feedContainer = document.getElementById('archive-feed');
       if (!feedContainer) return;
 
-      // Increased per_page to 100 to ensure a deep archive is loaded into memory
-      var ARCHIVE_API = "https://direct.faforever.com/wp-json/wp/v2/posts/?per_page=100&_fields=title,newshub_externalLinkUrl,link,newshub_sortIndex,date,categories,slug&categories=283";
+      // Added 'excerpt' to the _fields parameter
+      var ARCHIVE_API = "https://direct.faforever.com/wp-json/wp/v2/posts/?per_page=100&_fields=title,excerpt,newshub_externalLinkUrl,link,newshub_sortIndex,date,categories,slug&categories=283";
 
       fetch(ARCHIVE_API)
         .then(function(response) {
@@ -85,31 +85,29 @@
           return response.json();
         })
         .then(function(posts) {
-          // 1. Sort the posts by Date (Newest to Oldest)
+          // Sort Newest to Oldest by date
           posts.sort(function(a, b) {
             return new Date(b.date) - new Date(a.date);
           });
 
-          // 2. Filter out exclusion categories
+          // Filter out exclusion categories
           var filteredPosts = posts.filter(function(post) {
             return !post.categories || post.categories[1] !== 284;
           });
 
-          // 3. Slice off the first 6 (currently active on the main page)
-          // Store the remainder in our global array for pagination
+          // Slice off the first 6 active front-page posts
           allArchivedPosts = filteredPosts.slice(6);
 
           if(allArchivedPosts.length === 0) {
-            feedContainer.innerHTML = '<div style="color: var(--amber); font-family: monospace; text-align: center;">NO ARCHIVED LOGS FOUND.</div>';
+            feedContainer.innerHTML = '<div style="color: var(--amber); font-family: monospace; text-align: center; grid-column: 1 / -1;">NO ARCHIVED LOGS FOUND.</div>';
             return;
           }
 
-          // Render the first 20 posts
           renderPage(1);
         })
         .catch(function(err) {
           console.error("Archive Failure:", err);
-          feedContainer.innerHTML = `<div style="color: var(--red); text-align: center; padding: 40px;">DATABANK ACCESS DENIED // FIREWALL ACTIVE</div>`;
+          feedContainer.innerHTML = `<div style="color: var(--red); text-align: center; padding: 40px; grid-column: 1 / -1;">DATABANK ACCESS DENIED // FIREWALL ACTIVE</div>`;
         });
     }
 
@@ -118,23 +116,28 @@
       var feedContainer = document.getElementById('archive-feed');
       var rowsHtml = '';
 
-      // Calculate start and end indexes for slicing the array
       var startIndex = (currentPage - 1) * postsPerPage;
       var endIndex = startIndex + postsPerPage;
       var postsToRender = allArchivedPosts.slice(startIndex, endIndex);
 
-      postsToRender.forEach(function(post) {
+    postsToRender.forEach(function(post) {
         var cleanTitle = decodeHtml(post.title.rendered);
         var finalDestinationUrl = post.newshub_externalLinkUrl || post.link || '#';
 
-        // Faction coloring logic
-        var factionColor = 'var(--uef)';
-        var tagLabel = 'FAF // NEWS';
+        // Clean and trim the excerpt to exactly 300 characters
+        var cleanExcerpt = post.excerpt && post.excerpt.rendered ? decodeHtml(post.excerpt.rendered) : 'No additional intel provided.';
+        var excerptLimit = 300; 
+        if (cleanExcerpt.length > excerptLimit) {
+          cleanExcerpt = cleanExcerpt.substring(0, excerptLimit - 3) + '...'; 
+        }
+
+        // Faction targeting and class assignment for CSS (Tag logic removed)
+        var factionClass = 'uef';
         var matchTarget = (cleanTitle + ' ' + (post.slug || '')).toLowerCase();
 
-        if (matchTarget.indexOf('cybran') !== -1) { factionColor = 'var(--cybran)'; tagLabel = 'CYBRAN // INTEL'; } 
-        else if (matchTarget.indexOf('aeon') !== -1 || matchTarget.indexOf('tournament') !== -1) { factionColor = 'var(--aeon)'; tagLabel = 'AEON // PROTOCOL'; } 
-        else if (matchTarget.indexOf('seraphim') !== -1) { factionColor = 'var(--seraphim)'; tagLabel = 'SERAPHIM // SIGNAL'; }
+        if (matchTarget.indexOf('cybran') !== -1) { factionClass = 'cybran'; } 
+        else if (matchTarget.indexOf('aeon') !== -1 || matchTarget.indexOf('tournament') !== -1) { factionClass = 'aeon'; } 
+        else if (matchTarget.indexOf('seraphim') !== -1) { factionClass = 'seraphim'; }
 
         // Date Formatting
         var postDate = new Date(post.date);
@@ -144,22 +147,20 @@
         var year = postDate.getFullYear();
         var formattedDate = day + ' ' + month + ' ' + year;
 
+        // Render as a standard Tactical Card without the tag element
         rowsHtml += `
-          <a href="${finalDestinationUrl}" target="_blank" rel="noopener noreferrer" class="archive-row">
-            <div class="date">${formattedDate}</div>
-            <div class="tag" style="color: ${factionColor}; border-color: ${factionColor};">${tagLabel}</div>
-            <div class="title">${cleanTitle}</div>
-            <div class="icon">READ LOG →</div>
+          <a href="${finalDestinationUrl}" target="_blank" rel="noopener noreferrer" class="card ${factionClass}" style="text-decoration: none; display: block;">
+            <div class="corner tl"></div><div class="corner br"></div>
+            <div class="meta">ARCHIVED: ${formattedDate}</div>
+            <h3>${cleanTitle}</h3>
+            <p>${cleanExcerpt}</p>
+            <div class="readmore">READ LOG</div>
           </a>
         `;
       });
 
       feedContainer.innerHTML = rowsHtml;
-      
-      // Update the pagination buttons
       renderPaginationControls();
-      
-      // Auto-scroll back up to the top of the list
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -173,18 +174,14 @@
       }
 
       var html = '';
-      
-      // PREV button
       if (currentPage > 1) {
         html += `<button onclick="renderPage(${currentPage - 1})">← PREV</button>`;
       } else {
         html += `<button disabled style="opacity: 0.3; cursor: not-allowed;">← PREV</button>`;
       }
 
-      // PAGE readout
       html += `<span class="page-info">PAGE ${currentPage} OF ${totalPages}</span>`;
 
-      // NEXT button
       if (currentPage < totalPages) {
         html += `<button onclick="renderPage(${currentPage + 1})">NEXT →</button>`;
       } else {
