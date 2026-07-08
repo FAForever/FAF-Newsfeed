@@ -3,7 +3,7 @@ name: Deploy Tactical News Hub
 on:
   push:
     branches:
-      - main
+      - Develop
   schedule:
     # Automatically triggers every 6 hours to fetch fresh FAF map rotations independent of pushes
     - cron: '0 */6 * * *'
