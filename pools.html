@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAF // OPERATIONAL MATCHMAKER POOLS</title>
+
+  <link rel="stylesheet" href="assets/css/core.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/cards.css">
+  <link rel="stylesheet" href="assets/css/pools.css">
+
+  <script src="assets/js/engine.js"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Interactive active queue feedback overrides */
+    .pool-matrix .card {
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+    .pool-matrix .card.selected-queue {
+      background: var(--panel-bright, #171e24);
+      border-color: var(--phosphor) !important;
+      box-shadow: 0 0 12px rgba(78, 255, 162, 0.25);
+    }
+  </style>
+</head>
+<body>
+    
+  <div class="statusbar">
+    <span>
+      <span class="dot"></span>
+      <a href="index.html" style="color: inherit; text-decoration: none;">BRIEFINGS</a> &nbsp;//&nbsp; 
+      <span style="color: var(--phosphor);">MATCHMAKER_POOLS</span> &nbsp;//&nbsp; 
+      <a href="calendar.html" style="color: inherit; text-decoration: none;">OPERATIONAL TIMELINES</a> &nbsp;//&nbsp; 
+      <a href="archive.html" style="color: inherit; text-decoration: none;">DATABANK_ARCHIVE</a>
+    </span>
+    <span id="clock">SECTOR TIME —</span>
+  </div>
+
+  <div class="frame">
+    <header class="hero">
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="eyebrow">// ORACLE TELEMETRY LAYER</div>
+      <h1>MATCHMAKER POOLS<span class="cursor">&nbsp;</span></h1>
+      <p>Real-time deployment maps and active operational parameters parsing directly from the FAF Matchmaker network infrastructure.</p>
+    </header>
+
+    <section class="rating-analyzer">
+      <div>
+        <span style="font-family: 'Share Tech Mono', monospace; color: var(--phosphor); font-size: 14px; display: block; margin-bottom: 4px;">// RADAR TARGETING FILTERS</span>
+        <p style="margin: 0; font-size: 13px; color: var(--text-dim);">Click any matrix queue card below to lock telemetry. Adjust rating to calculate exact ELO allocation thresholds.</p>
+      </div>
+      <div class="rating-input-wrapper">
+        <label for="user-rating">INPUT RATING:</label>
+        <input type="number" id="user-rating" value="1100" min="0" max="3000" oninput="filterMaps()">
+      </div>
+    </section>
+
+    <div class="section-label">SELECT ACTIVE QUEUE MATRIX</div>
+    <div class="pool-matrix" id="queue-container">
+      <div style="color: var(--text-dim); font-family: 'Share Tech Mono', monospace;">FETCHING ACTIVE QUEUE CORES...</div>
+    </div>
+
+    <div class="section-label" id="pool-display-label">PREDICTED COMBAT MAP DROP POOL</div>
+    <div class="map-allocation-grid" id="map-pool-container">
+      </div>
+  </div>
+
+  <script>
+let liveMapPoolDatabase = [];
+    let selectedQueueFilter = "ALL"; 
+
+    // Telemetry and Configuration Constants
+    const CACHE_KEY = "faf_map_pools_cache";
+    const CACHE_TIME_KEY = "faf_map_pools_cache_timestamp";
+    const ONE_HOUR = 60 * 60 * 1000; 
+    const PRIMARY_URL = "https://api.faforever.com/data/matchmakerQueue?include=mapPool,mapPool.mapPoolAssignments,mapPool.mapPoolAssignments.mapVersion,mapPool.mapPoolAssignments.mapVersion.map&fields[matchmakerQueue]=technicalName,enabled,mapPool";
+
+    async function fetchLiveMapPools() {
+      const cachedData = localStorage.getItem(CACHE_KEY);
+      const cachedTimestamp = localStorage.getItem(CACHE_TIME_KEY);
+      const now = Date.now();
+
+      // 1. Immediately read from cache if valid to bypass all network checks
+      if (cachedData && cachedTimestamp && (now - cachedTimestamp < ONE_HOUR)) {
+        console.log("CACHE VERIFIED — serving from local storage.");
+        parseFafPayload(JSON.parse(cachedData));
+        return;
+      }
+
+      console.log("Initializing external telemetry pipeline...");
+      
+      // 2. Custom headers to appease FAF server firewalls and prevent 401/Dropped connections
+      const tacticalHeaders = {
+        "method": "GET",
+        "headers": {
+          "Accept": "application/vnd.api+json",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) FafNewsfeedClient/1.0"
+        }
+      };
+
+      // Attempt Direct Connection
+      try {
+        const response = await fetch(PRIMARY_URL, tacticalHeaders);
+        if (!response.ok) throw new Error();
+        const data = await response.json();
+        saveAndParse(data, now);
+        return;
+      } catch (e) {
+        console.warn("Direct connection restricted. Routing through open-tunnel proxies...");
+      }
+
+      // 3. Multi-Proxy Parallel Matrix (Bypasses local file system origin boundaries)
+      const openProxies = [
+        "https://api.allorigins.win/get?url=" + encodeURIComponent(PRIMARY_URL),
+        "https://thingproxy.freeboard.io/fetch/" + PRIMARY_URL
+      ];
+
+      try {
+        const data = await Promise.any(openProxies.map(async (url) => {
+          const res = await fetch(url);
+          if (!res.ok) throw new Error();
+          const json = await res.json();
+          // Safely standardizing payload variance between proxies
+          return json.contents ? JSON.parse(json.contents) : json;
+        }));
+        saveAndParse(data, now);
+      } catch (err) {
+        console.error("All live endpoint lines reported fault closures.");
+        if (cachedData) {
+          console.warn("Serving stale fallback cache data block.");
+          parseFafPayload(JSON.parse(cachedData));
+        } else {
+          renderOfflineError();
+        }
+      }
+    }
+
+    function saveAndParse(data, timestamp) {
+      if (!data || !data.data) throw new Error("Invalid payload data structure");
+      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+      localStorage.setItem(CACHE_TIME_KEY, timestamp.toString());
+      parseFafPayload(data);
+    }
+
+    function parseFafPayload(payload) {
+      const queueContainer = document.getElementById('queue-container');
+      let queueHtml = '';
+      liveMapPoolDatabase = [];
+
+      const targetQueues = ['ladder1v1', 'tmm2v2', 'tmm3v3', 'tmm4v4'];
+      const queues = payload.data.filter(q => targetQueues.includes(q.attributes.technicalName));
+
+      const includedMap = {};
+      if (payload.included) {
+        payload.included.forEach(item => { includedMap[`${item.type}_${item.id}`] = item; });
+      }
+
+      queues.forEach(queue => {
+        const isOnline = queue.attributes.enabled;
+        const techName = queue.attributes.technicalName;
+        const cleanLabel = techName.replace('tmm', 'TEAM ').replace('ladder1v1', 'LADDER 1V1').toUpperCase();
+        
+        queueHtml += `
+          <div class="card" id="qcard-${techName}" onclick="selectQueue('${cleanLabel}', 'qcard-${techName}')" style="border-left-color: ${isOnline ? 'var(--phosphor)' : 'var(--red)'}; padding: 14px;">
+            <span class="tag" style="margin-bottom: 4px; background: transparent; color: ${isOnline ? 'var(--phosphor)' : 'var(--red)'}; border-color: ${isOnline ? 'var(--phosphor-dim)' : 'var(--red)'};">
+              ${isOnline ? 'ONLINE' : 'OFFLINE'}
+            </span>
+            <h3 style="font-size: 15px; margin: 6px 0 2px 0;">${cleanLabel}</h3>
+          </div>
+        `;
+
+        const mapPoolRel = queue.relationships?.mapPool?.data;
+        if (mapPoolRel) {
+          const mapPoolObj = includedMap[`mapPool_${mapPoolRel.id}`];
+          const assignmentsRel = mapPoolObj?.relationships?.mapPoolAssignments?.data || [];
+
+          assignmentsRel.forEach(aRel => {
+            const assignmentObj = includedMap[`mapPoolAssignment_${aRel.id}`];
+            const mapVerRel = assignmentObj?.relationships?.mapVersion?.data;
+            
+            if (mapVerRel) {
+              const mapVerObj = includedMap[`mapVersion_${mapVerRel.id}`];
+              const mapDataRel = mapVerObj?.relationships?.map?.data;
+              const mapDataObj = mapDataRel ? includedMap[`map_${mapDataRel.id}`] : null;
+
+              if (mapVerObj && mapDataObj) {
+                let minR = assignmentObj.attributes?.minRating ?? 0;
+                let maxR = assignmentObj.attributes?.maxRating ?? 3000;
+                
+                liveMapPoolDatabase.push({
+                  id: mapVerObj.id,
+                  name: mapDataObj.attributes.displayName,
+                  size: `${(mapVerObj.attributes.width / 51.2).toFixed(0)}km`,
+                  players: mapVerObj.attributes.maxPlayers,
+                  minRating: minR,
+                  maxRating: maxR,
+                  type: cleanLabel
+                });
+              }
+            }
+          });
+        }
+      });
+
+      queueContainer.innerHTML = queueHtml;
+      
+      // Consolidate duplicates out of the tracking arrays
+      liveMapPoolDatabase = liveMapPoolDatabase.filter((map, idx, self) =>
+        idx === self.findIndex((m) => m.id === map.id && m.type === map.type)
+      );
+
+      if (liveMapPoolDatabase.length === 0) {
+        renderOfflineError();
+        return;
+      }
+      
+      // Dynamic interface binding re-selection handler
+      const targetTech = selectedQueueFilter.toLowerCase().replace('team ', 'tmm').replace('ladder 1v1', 'ladder1v1');
+      const currentSelectedCard = targetQueues.includes(targetTech) ? `qcard-${targetTech}` : 'qcard-ladder1v1';
+      
+      selectQueue(selectedQueueFilter === "ALL" ? "LADDER 1V1" : selectedQueueFilter, currentSelectedCard);
+    }
+
+    function renderOfflineError() {
+      const queueContainer = document.getElementById('queue-container');
+      const mapContainer = document.getElementById('map-pool-container');
+      
+      queueContainer.innerHTML = `
+        <div class="card" style="border-left-color: var(--red); padding: 14px; grid-column: 1/-1;">
+          <span class="tag" style="color: var(--red); border-color: var(--red)">LINK FAULT</span>
+          <h3 style="font-size: 15px; margin: 6px 0 2px 0;">COULD NOT INITIALIZE REAL-TIME MAP POOLS</h3>
+        </div>
+      `;
+      
+      mapContainer.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; color: var(--red); font-family: 'Share Tech Mono', monospace; padding: 40px 20px; border: 1px dashed var(--red);">
+          ERROR: TELEMETRY DISCONNECTED. PLEASE VERIFY INTERNET CONNECTION OR PROXY ACCESS AVAILABILITY.
+        </div>`;
+    }
+
+    function selectQueue(queueLabel, cardId) {
+      selectedQueueFilter = queueLabel;
+      
+      document.querySelectorAll('.pool-matrix .card').forEach(card => {
+        card.classList.remove('selected-queue');
+      });
+      
+      const selectedEl = document.getElementById(cardId);
+      if (selectedEl) selectedEl.classList.add('selected-queue');
+
+      document.getElementById('pool-display-label').innerText = `${queueLabel} POTENTIAL MAP POOL`;
+      filterMaps();
+    }
+
+    function filterMaps() {
+      if (liveMapPoolDatabase.length === 0) return;
+      
+      const userRating = parseInt(document.getElementById('user-rating').value) || 0;
+      const mapContainer = document.getElementById('map-pool-container');
+      
+      const allowedDrops = liveMapPoolDatabase.filter(map => {
+        const matchesQueue = (selectedQueueFilter === "ALL" || map.type === selectedQueueFilter);
+        const matchesRating = (userRating >= map.minRating && userRating <= map.maxRating);
+        return matchesQueue && matchesRating;
+      });
+
+      let html = '';
+      allowedDrops.forEach(map => {
+        html += `
+          <div class="map-card">
+            <span class="badge-bracket">${map.type}</span>
+            <img src="https://content.faforever.com/faf/vault/map_previews/small/${map.id}.png" onerror="this.src='https://picsum.photos/220/120?random=${map.id}'" alt="${map.name}">
+            <div style="color: #fff; font-weight: 600; font-size: 13px; margin-bottom: 2px;">${map.name}</div>
+            <div style="color: var(--text-dim); font-size: 11px;">DIMENSIONS: ${map.size} // ${map.players} slots</div>
+            <div style="color: var(--amber); font-size: 10px; margin-top: 4px;">ACTIVE DROP RANGE: ${map.minRating}-${map.maxRating} ELO</div>
+          </div>
+        `;
+      });
+
+      mapContainer.innerHTML = html || `
+        <div style="grid-column: 1/-1; text-align: center; color: var(--red); font-family: 'Share Tech Mono', monospace; padding: 20px;">
+          NO MAPS CONFIGURED IN ${selectedQueueFilter} FOR THE ${userRating} RATING TIER
+        </div>`;
+    }
+
+    window.onload = function() {
+      fetchLiveMapPools();
+    };
+  </script>
+</body>
+</html>
