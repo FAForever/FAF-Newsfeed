@@ -34,7 +34,7 @@ jobs:
           node-version: '20'
 
       - name: Fetch Map Pool Data from FAF API
-        run: node scripts/fetch-map-pools.js
+        run: node assets/js/fetch-map-pools.js
 
       - name: Commit Updated Data Layer (If Changed)
         run: |
