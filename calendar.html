@@ -14,14 +14,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
-
   <script src="events.js"></script>
 </head>
 <body>
 
   <div class="frame">
 
-<div class="statusbar">
+    <div class="statusbar">
       <span>
         <span class="dot"></span>
         <a href="index.html" style="color: inherit; text-decoration: none;">BRIEFINGS</a> &nbsp;//&nbsp; 
@@ -34,31 +33,48 @@
     <header class="hero">
       <div class="corner tl"></div><div class="corner tr"></div>
       <div class="corner bl"></div><div class="corner br"></div>
-      <div class="radar"></div>
       <div class="eyebrow">// OPERATIONAL TIMELINES</div>
       <h1>EVENTS CALENDAR<span class="cursor">&nbsp;</span></h1>
       <p>Deployment dates, seasonal qualifiers, and community cast schedules. Synchronize your systems.</p>
     </header>
 
+    <!-- Custom Week Start Controller -->
     <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
       <button id="week-start-toggle" style="background: rgba(0,0,0,0.2); border: 1px solid var(--phosphor-dim); color: var(--phosphor); font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 0.1em; padding: 6px 12px; cursor: pointer;">
         WEEK START: SUNDAY
       </button>
     </div>
 
+    <!-- Calendar Grid Anchor Box -->
     <div id="calendar-root"></div>
 
   </div>
 
-<script>
-    // Note: The Sector Clock is now automatically handled in the background by engine.js!
+  <!-- Unified Event Modal Infrastructure Layer -->
+  <div id="event-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+      <div class="corner tl"></div><div class="corner br"></div>
+      <div class="modal-header">
+        <h3 id="modal-title">INTEL BRIEFING</h3>
+        <button id="modal-close" class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-date" class="meta">DATE: -- --- ----</div>
+        <p id="modal-desc">Loading telemetry details...</p>
+        <a id="modal-link" href="#" target="_blank" class="readmore">ACCESS CHANNEL</a>
+      </div>
+    </div>
+  </div>
 
-    // ===== CALENDAR INITIALIZATION =====
+  <script>
+    // Make the calendar instance visible globally within this frame script scope
+    let tacticalCalendarInstance = null;
+
     document.addEventListener('DOMContentLoaded', function() {
-      var calendarEl = document.getElementById('calendar-root');
+      const calendarEl = document.getElementById('calendar-root');
+      let processedEvents = [];
       
       // --- TIMEZONE INTERCEPTOR ---
-      var processedEvents = [];
       if (typeof fafEventsData !== 'undefined') {
         processedEvents = fafEventsData.map(function(ev) {
           if (ev.start && ev.start.indexOf('T') !== -1) {
@@ -76,16 +92,16 @@
         });
       }
 
-      var calendar = new FullCalendar.Calendar(calendarEl, {
+      // Initialize the global pointer reference
+      tacticalCalendarInstance = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
-        firstDay: 0, // Starts on Sunday by default
+        firstDay: 0, 
         displayEventTime: false, 
         headerToolbar: {
           left: 'prev,next today',
           center: 'title',
           right: 'dayGridMonth,timeGridWeek'
         },
-        
         events: processedEvents,
         
         eventDidMount: function(info) {
@@ -98,16 +114,16 @@
         eventClick: function(info) {
           info.jsEvent.preventDefault(); 
 
-          var modal = document.getElementById('event-modal');
-          var titleEl = document.getElementById('modal-title');
-          var dateEl = document.getElementById('modal-date');
-          var descEl = document.getElementById('modal-desc');
-          var linkEl = document.getElementById('modal-link');
+          const modal = document.getElementById('event-modal');
+          const titleEl = document.getElementById('modal-title');
+          const dateEl = document.getElementById('modal-date');
+          const descEl = document.getElementById('modal-desc');
+          const linkEl = document.getElementById('modal-link');
 
           titleEl.textContent = info.event.title;
           
-          var sd = info.event.start;
-          var months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+          const sd = info.event.start;
+          const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
           dateEl.textContent = 'DATE: ' + String(sd.getDate()).padStart(2, '0') + ' ' + months[sd.getMonth()] + ' ' + sd.getFullYear();
 
           descEl.textContent = info.event.extendedProps.description || 'No additional intel provided for this timeline event.';
@@ -123,29 +139,34 @@
         }
       });
 
-      calendar.render();
+      // Render out your grid
+      tacticalCalendarInstance.render();
       
-      // --- MODAL CLOSE LOGIC ---
-      document.getElementById('modal-close').addEventListener('click', function() {
-        document.getElementById('event-modal').style.display = 'none';
-      });
+      // Initialize controller handlers
+      initCustomControlTriggers();
+    });
 
-      document.getElementById('event-modal').addEventListener('click', function(e) {
-        if (e.target === this) {
-          this.style.display = 'none';
-        }
-      });
-
-      // --- WEEK START TOGGLE LOGIC ---
-      var weekStartsMonday = false;
-      var toggleBtn = document.getElementById('week-start-toggle');
+    // --- SEPARATE CUSTOM CONTROL EVENT HANDLING PIPELINE ---
+    function initCustomControlTriggers() {
+      const toggleBtn = document.getElementById('week-start-toggle');
       
       if (toggleBtn) {
         toggleBtn.addEventListener('click', function() {
-          weekStartsMonday = !weekStartsMonday;
-          calendar.setOption('firstDay', weekStartsMonday ? 1 : 0);
-          toggleBtn.textContent = 'WEEK START: ' + (weekStartsMonday ? 'MONDAY' : 'SUNDAY');
+          if (!tacticalCalendarInstance) return;
+
+          // Pull and parse current active rules dynamically from inside the rendering engine
+          const currentFirstDay = tacticalCalendarInstance.getOption('firstDay');
           
+          // Toggle baseline integers: 0 is Sunday, 1 is Monday
+          const targetDayInteger = (currentFirstDay === 0) ? 1 : 0;
+          
+          // Re-inject mutated preference rule sets
+          tacticalCalendarInstance.setOption('firstDay', targetDayInteger);
+          
+          // Update Text parameters
+          toggleBtn.textContent = 'WEEK START: ' + (targetDayInteger === 1 ? 'MONDAY' : 'SUNDAY');
+          
+          // Minimal non-disruptive feedback visual flicker state
           toggleBtn.style.backgroundColor = 'var(--phosphor)';
           toggleBtn.style.color = 'var(--void)';
           setTimeout(() => {
@@ -154,8 +175,29 @@
           }, 150);
         });
       }
-    });
+
+      // --- MODAL CLOSE PIPELINES ---
+      const modalCloseBtn = document.getElementById('modal-close');
+      const modalOverlay = document.getElementById('event-modal');
+
+      if (modalCloseBtn) {
+        modalCloseBtn.addEventListener('click', function() {
+          if (modalOverlay) modalOverlay.style.display = 'none';
+        });
+      }
+
+      if (modalOverlay) {
+        modalOverlay.addEventListener('click', function(e) {
+          if (e.target === this) {
+            this.style.display = 'none';
+          }
+        });
+      }
+    }
   </script>
+
+  <!-- Comms feedback button placement mapping to your components.css system -->
+  <a href="https://github.com/FAForever" target="_blank" class="comms-feedback-btn">COMMS_FEEDBACK</a>
 
 </body>
 </html>
