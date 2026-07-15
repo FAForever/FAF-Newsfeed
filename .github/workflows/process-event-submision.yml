@@ -1,0 +1,80 @@
+name: Process event submission
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  build-pr:
+    if: contains(github.event.issue.labels.*.name, 'event-submission')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse issue into events.json
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = context.payload.issue.body;
+
+            function getField(label) {
+              const re = new RegExp(`### ${label}\\s*\\n\\s*([\\s\\S]*?)(?=\\n### |$)`);
+              const m = body.match(re);
+              const val = m ? m[1].trim() : '';
+              return val === '_No response_' ? '' : val;
+            }
+
+            const title = getField('Event title');
+            const startDate = getField('Start date \\(YYYY-MM-DD\\)');
+            const startTime = getField('Start time \\(24h, optional\\)');
+            const endDateTime = getField('End date/time \\(optional\\)');
+            const description = getField('Description');
+            const link = getField('Link \\(optional\\)');
+
+            const start = startTime ? `${startDate}T${startTime}:00` : startDate;
+
+            const event = {
+              title,
+              start,
+              ...(endDateTime ? { end: endDateTime } : {}),
+              description,
+              ...(link ? { url: link } : {}),
+            };
+
+            const events = JSON.parse(fs.readFileSync('events.json', 'utf8'));
+            events.push(event);
+            fs.writeFileSync('events.json', JSON.stringify(events, null, 2));
+
+            core.setOutput('title', title);
+
+      - name: Open PR for review
+        id: cpr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "Add event: ${{ steps.parse.outputs.title }}"
+          branch: event/issue-${{ github.event.issue.number }}
+          title: "New event: ${{ steps.parse.outputs.title }}"
+          body: |
+            Auto-generated from #${{ github.event.issue.number }}.
+            Check the dates/link in the diff, then merge to publish.
+
+            Closes #${{ github.event.issue.number }}
+          add-paths: events.json
+
+      - name: Comment on the issue
+        if: steps.cpr.outputs.pull-request-number
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `Thanks! Opened a PR for this: #${{ steps.cpr.outputs.pull-request-number }}. A maintainer will review it and it'll go live once merged.`
+            });

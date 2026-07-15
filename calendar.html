@@ -8,13 +8,13 @@
   <link rel="stylesheet" href="assets/css/core.css">
   <link rel="stylesheet" href="assets/css/components.css">
   <link rel="stylesheet" href="assets/css/calendar.css">
-  <script src="assets/js/engine.js"></script>
+  <script src="assets/script/engine.js"></script>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
-  <script src="events.js"></script>
+  <script src="assets/script/events.js"></script>
 </head>
 <body>
 
@@ -70,7 +70,39 @@
     // Make the calendar instance visible globally within this frame script scope
     let tacticalCalendarInstance = null;
 
+    // --- ASYNC DATA GATE ---
+    // events.js now fetches events.json, so we can't assume fafEventsData is
+    // populated by DOMContentLoaded alone anymore. Wait for both signals.
+    let domReady = false;
+    let eventsReady = false;
+
     document.addEventListener('DOMContentLoaded', function() {
+      domReady = true;
+      tryInitCalendar();
+    });
+
+    window.addEventListener('fafEventsReady', function() {
+      eventsReady = true;
+      tryInitCalendar();
+    });
+
+    // --- SAFETY NET ---
+    // If fafEventsReady never fires (e.g. a stale events.js that doesn't
+    // dispatch it), don't let the calendar hang forever — init anyway after
+    // a short grace period so the page still renders something.
+    setTimeout(function() {
+      if (!eventsReady) {
+        console.warn('[calendar.html] fafEventsReady never fired within 3s — ' +
+          'initializing calendar without waiting. Check that events.js is the ' +
+          'fetch-based loader version and that events.json is reachable.');
+        eventsReady = true;
+        tryInitCalendar();
+      }
+    }, 3000);
+
+    function tryInitCalendar() {
+      if (!domReady || !eventsReady) return;
+
       const calendarEl = document.getElementById('calendar-root');
       let processedEvents = [];
       
@@ -144,7 +176,7 @@
       
       // Initialize controller handlers
       initCustomControlTriggers();
-    });
+    }
 
     // --- SEPARATE CUSTOM CONTROL EVENT HANDLING PIPELINE ---
     function initCustomControlTriggers() {

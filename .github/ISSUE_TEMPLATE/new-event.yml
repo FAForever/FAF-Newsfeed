@@ -1,0 +1,54 @@
+name: 📅 New Calendar Event
+description: Submit an event to appear on the FAF Newsfeed events calendar.
+title: "[Event] "
+labels: ["event-submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Fill in the details below. A maintainer will review before it goes live — you'll get a comment here once it's published.
+  - type: input
+    id: title
+    attributes:
+      label: Event title
+      placeholder: "Spring Championship Qualifier"
+    validations:
+      required: true
+  - type: input
+    id: start-date
+    attributes:
+      label: "Start date (YYYY-MM-DD)"
+      placeholder: "2026-08-01"
+    validations:
+      required: true
+  - type: input
+    id: start-time
+    attributes:
+      label: "Start time (24h, optional)"
+      description: Leave blank for an all-day event.
+      placeholder: "18:00"
+  - type: input
+    id: end-datetime
+    attributes:
+      label: "End date/time (optional)"
+      placeholder: "2026-08-01T20:00:00"
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      placeholder: "What's happening, who it's for, anything players should know."
+    validations:
+      required: true
+  - type: input
+    id: link
+    attributes:
+      label: "Link (optional)"
+      description: Forum post, Discord invite, stream link, etc.
+      placeholder: "https://forum.faforever.com/topic/1234"
+  - type: input
+    id: contact
+    attributes:
+      label: Your Discord/forum name
+      description: So we can reach out if anything's unclear.
+    validations:
+      required: true
