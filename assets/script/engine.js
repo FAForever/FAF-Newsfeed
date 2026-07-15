@@ -69,7 +69,7 @@ function saveToCache(customKey, postsArray) {
   }
 }
 
-// 4. MULTI-PAGE CRAWLER FETCH ENGINE
+// 4. STATIC JSON FETCH ENGINE
 function fetchFAFData(apiUrl, cacheKey, successCallback, errorCallback) {
   var cachedData = getCachedPosts(cacheKey);
   if (cachedData) {
@@ -77,41 +77,23 @@ function fetchFAFData(apiUrl, cacheKey, successCallback, errorCallback) {
      return;
   }
 
-  var fullDataset = [];
-  fetchPage(1);
-
-  function fetchPage(pageNumber) {
-    var paginatedUrl = apiUrl + "&page=" + pageNumber;
-
-    fetch(paginatedUrl)
-      .then(function(response) {
-        if (!response.ok) {
-          if (pageNumber === 1) throw new Error("Databank Offline");
-          return [];
-        }
-        return response.json();
-      })
-      .then(function(posts) {
-        if (posts.length === 0) {
-          saveToCache(cacheKey, fullDataset);
-          return;
-        }
-
-        fullDataset = fullDataset.concat(posts);
-        successCallback(fullDataset);
-
-        // Continue background crawling if a full page was retrieved
-        if (posts.length === 100 && pageNumber < 5) {
-          fetchPage(pageNumber + 1);
-        } else {
-          saveToCache(cacheKey, fullDataset);
-        }
-      })
-      .catch(function(err) {
-        console.error("Crawler Error on page " + pageNumber, err);
-        if (pageNumber === 1 && errorCallback) errorCallback(err);
-      });
-  }
+  // Fetch the static JSON file directly without pagination loops
+  fetch(apiUrl)
+    .then(function(response) {
+      if (!response.ok) {
+        throw new Error("Databank Offline");
+      }
+      return response.json();
+    })
+    .then(function(posts) {
+      // Save to session cache and pass data to the renderer
+      saveToCache(cacheKey, posts);
+      successCallback(posts);
+    })
+    .catch(function(err) {
+      console.error("Comms Error: Failed to load static databank.", err);
+      if (errorCallback) errorCallback(err);
+    });
 }
 
 // Global baseline triggers
