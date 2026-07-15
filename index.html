@@ -37,6 +37,11 @@
       <p>Community briefings, patch intel, and tournament orders for Forged Alliance Forever. All channels monitored.</p>
 
       <div class="quicklinks">
+        <a href="https://www.twitch.tv/faflive" id="faflive-btn" target="_blank" style="display: none; border-color: var(--red); color: var(--red);">
+          <span class="dot" style="background: var(--red); box-shadow: 0 0 5px var(--red); margin-right: 6px;"></span>
+          FAFLIVE IS STREAMING ▸
+        </a>
+
         <a href="https://discord.gg/mXahVSKGVb">DISCORD ▸</a>
         <a href="https://www.twitch.tv/directory/category/supreme-commander-forged-alliance">TWITCH ▸</a>
         <a href="https://www.youtube.com/@ForgedAllianceForever">YOUTUBE ▸</a>
@@ -101,7 +106,7 @@
       var feedContainer = document.getElementById('news-feed'); 
       if (!feedContainer) return;
 
-      var API_URL = "https://direct.faforever.com/wp-json/wp/v2/posts/?per_page=15&_embed&_fields=_links.author,_links.wp:featuredmedia,_embedded,title,excerpt,newshub_externalLinkUrl,link,newshub_sortIndex,date,categories,slug&categories=283";
+      var API_URL = "assets/data/posts.json";
 
       fetchFAFData(API_URL, "front_page_cache",
         function(posts) {

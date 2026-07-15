@@ -1,0 +1,32 @@
+name: Fetch FAF News Data
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # Runs automatically every 30 minutes
+  workflow_dispatch: # Allows you to click a "Run" button manually in the Actions tab
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Allows the bot to push code to your repo
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Fetch WordPress API Data
+        run: |
+          mkdir -p assets/data
+          # Fetch the first 100 posts with embedded images and save to a local JSON file
+          curl -s "https://direct.faforever.com/wp-json/wp/v2/posts/?per_page=100&_embed" > assets/data/posts.json
+
+      - name: Commit and Push Changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/data/posts.json
+          
+          # Only commit if the JSON file actually changed
+          git commit -m "Automated Intel Sync: Update FAF news data" || echo "No changes to commit"
+          git push

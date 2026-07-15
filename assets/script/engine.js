@@ -148,3 +148,24 @@ function resetHudScale() {
 
 // Intercept loading chains to apply user settings immediately 
 window.addEventListener('DOMContentLoaded', applyHudScale);
+
+
+// Check if FAFLive is live on Twitch
+function checkTwitchStatus() {
+  fetch('https://decapi.me/twitch/uptime/faflive')
+    .then(response => response.text())
+    .then(data => {
+      // If the response doesn't contain "offline" or an error, they are live!
+      if (!data.includes('offline') && !data.includes('not found')) {
+        const liveBtn = document.getElementById('faflive-btn');
+        if (liveBtn) {
+          liveBtn.style.display = 'inline-block';
+          // Optional: Add a CSS pulse animation to the red dot if you want to get fancy
+        }
+      }
+    })
+    .catch(err => console.log("Comms interference checking Twitch status.", err));
+}
+
+// Fire the check when the page loads
+window.addEventListener('load', checkTwitchStatus);
