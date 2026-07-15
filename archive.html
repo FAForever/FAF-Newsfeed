@@ -96,10 +96,11 @@
       var feedContainer = document.getElementById('archive-feed');
       if (!feedContainer) return;
 
-      var ARCHIVE_API = "assets/data/posts.json";
+      // REVERTED: Now pointing back to the live WordPress API for unlimited historical depth
+      var ARCHIVE_API = "https://direct.faforever.com/wp-json/wp/v2/posts/?per_page=100&orderby=date&order=desc&_fields=title,excerpt,newshub_externalLinkUrl,link,newshub_sortIndex,date,categories,slug&categories=283";
       var firstLoadComplete = false;
 
-      // Isolated deep archive load signature key
+      // Using the network crawler version of fetchFAFData in engine.js to fetch past page 1
       fetchFAFData(ARCHIVE_API, "deep_archive_cache", 
         function(posts) {
           posts.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
@@ -108,6 +109,7 @@
             return !post.categories || post.categories[1] !== 284;
           });
           
+          // Slice out the first 6 posts so they don't duplicate what's featured on index.html
           allArchivedPosts = filteredPosts.slice(6);
           
           if(allArchivedPosts.length === 0) {
@@ -193,6 +195,6 @@
     }
 
     window.onload = initArchive;
-  </script>
+</script>
 </body>
 </html>

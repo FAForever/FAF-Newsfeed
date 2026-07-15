@@ -70,6 +70,7 @@ function saveToCache(customKey, postsArray) {
 }
 
 // 4. STATIC JSON FETCH ENGINE
+// 4. HYBRID STATIC / CRAWLER FETCH ENGINE
 function fetchFAFData(apiUrl, cacheKey, successCallback, errorCallback) {
   var cachedData = getCachedPosts(cacheKey);
   if (cachedData) {
@@ -77,23 +78,62 @@ function fetchFAFData(apiUrl, cacheKey, successCallback, errorCallback) {
      return;
   }
 
-  // Fetch the static JSON file directly without pagination loops
-  fetch(apiUrl)
-    .then(function(response) {
-      if (!response.ok) {
-        throw new Error("Databank Offline");
-      }
-      return response.json();
-    })
-    .then(function(posts) {
-      // Save to session cache and pass data to the renderer
-      saveToCache(cacheKey, posts);
-      successCallback(posts);
-    })
-    .catch(function(err) {
-      console.error("Comms Error: Failed to load static databank.", err);
-      if (errorCallback) errorCallback(err);
-    });
+  // Check if we are loading our local static JSON file
+  var isStaticLocalFile = apiUrl.endsWith('.json');
+  var fullDataset = [];
+
+  if (isStaticLocalFile) {
+    // If it's the static local file, fetch it once and stop
+    fetch(apiUrl)
+      .then(function(response) {
+        if (!response.ok) throw new Error("Local Databank Offline");
+        return response.json();
+      })
+      .then(function(posts) {
+        saveToCache(cacheKey, posts);
+        successCallback(posts);
+      })
+      .catch(function(err) {
+        console.error("Comms Error: Failed to load static local databank.", err);
+        if (errorCallback) errorCallback(err);
+      });
+  } else {
+    // Otherwise, run the original background crawler loop to fetch past Page 1 from the live API
+    fetchPage(1);
+  }
+
+  function fetchPage(pageNumber) {
+    var paginatedUrl = apiUrl + "&page=" + pageNumber;
+
+    fetch(paginatedUrl)
+      .then(function(response) {
+        if (!response.ok) {
+          if (pageNumber === 1) throw new Error("Live API Databank Offline");
+          return [];
+        }
+        return response.json();
+      })
+      .then(function(posts) {
+        if (posts.length === 0) {
+          saveToCache(cacheKey, fullDataset);
+          return;
+        }
+
+        fullDataset = fullDataset.concat(posts);
+        successCallback(fullDataset);
+
+        // Fetch deep history up to 5 pages if available
+        if (posts.length === 100 && pageNumber < 5) {
+          fetchPage(pageNumber + 1);
+        } else {
+          saveToCache(cacheKey, fullDataset);
+        }
+      })
+      .catch(function(err) {
+        console.error("Crawler Error on page " + pageNumber, err);
+        if (pageNumber === 1 && errorCallback) errorCallback(err);
+      });
+  }
 }
 
 // Global baseline triggers
